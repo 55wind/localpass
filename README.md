@@ -51,6 +51,17 @@ DETECTOR_DEVICE=cpu        # AI 작성 판별 모델(1.5B)도 GPU 없이 — 짧
 - 켜지는 동안(실측 2~4분) 사이트 하단에 "AI 분석 서버(GPU)를 켜는 중 · 경과 시간"이 표시되고, 준비되면 사라집니다. 켜진 뒤 응답은 1건에 3~4초.
 - 주소는 공개 URL이지만 vLLM API 키로 막혀 있어 키 없이 부르면 401입니다.
 
+### 운영 배포 — Vercel
+
+운영 주소: https://localpass-kappa.vercel.app (FastAPI, 서울 리전 `icn1`, 함수 최대 300초)
+
+- GitHub `main` 브랜치에 푸시하면 Vercel이 자동으로 배포합니다.
+- 환경변수는 Vercel 프로젝트 설정에 등록합니다: `TOUR_API_KEY`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`,
+  `LLM_BASE_URL`(Modal Qwen 주소 + `/v1`), `LLM_API_KEY`, `LLM_MODEL`, `LLM_TIMEOUT=300`,
+  `AI_DETECTOR=remote`, `DETECTOR_URL`(Modal 판별기 주소)
+- Vercel 함수는 메모리가 2GB라 AI 작성 판별기는 `deploy/modal_detector.py` 로 Modal에 따로 올립니다.
+- 캐시는 함수의 `/tmp` 에 저장됩니다 (인스턴스가 살아 있는 동안 유지).
+
 ## 필요한 API 키
 
 | 키 | 발급처 | 용도 | 없을 때 |
