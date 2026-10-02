@@ -16,6 +16,7 @@ from ai_pipeline import llm, translate
 from ai_pipeline.trust_filter import analyze_post
 from config import DEMO_DIR, REGIONS, REVIEWS_PER_PLACE
 from data_sources import naver_blog, tour_api
+from data_sources.address import romanize_address
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +59,15 @@ def _decorate(places: list[dict]) -> list[dict]:
     return places
 
 
+def _localize_addr(places: list[dict], lang: str) -> None:
+    """외국어 화면에서 한국어 주소가 남지 않게 — 공식 외국어 주소가 없으면 영문 로마자 주소로."""
+    if lang == "ko":
+        return
+    for p in places:
+        if not p["addr"] or tour_api.has_hangul(p["addr"]):
+            p["addr"] = romanize_address(p["addr_ko"])
+
+
 def _live_places(region: dict, lang: str) -> list[dict]:
     items = tour_api.location_list("ko", region) + tour_api.festivals("ko", region)
     seen, places = set(), []
@@ -76,6 +86,7 @@ def _live_places(region: dict, lang: str) -> list[dict]:
         for p, name in zip(rest, translate.translate_names([p["title_ko"] for p in rest], lang)):
             if name != p["title_ko"]:
                 p["title"], p["machine_translated"] = name, True
+    _localize_addr(places, lang)
     return places
 
 
@@ -105,6 +116,7 @@ def search_places(q: str, lang: str) -> dict:
             for p, name in zip(rest, translate.translate_names([p["title_ko"] for p in rest], lang)):
                 if name != p["title_ko"]:
                     p["title"], p["machine_translated"] = name, True
+            _localize_addr(places, lang)
             return {"places": _decorate(places), "source": "live", "error": None}
         except tour_api.TourApiError as e:
             log.error("키워드 검색 실패: %s", e)

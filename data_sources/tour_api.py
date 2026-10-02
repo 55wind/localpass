@@ -156,6 +156,10 @@ def split_foreign_title(title: str) -> tuple[str, str]:
     return (title[: m.start()].strip(), m.group(1).strip()) if m else ((title or "").strip(), "")
 
 
+def has_hangul(text: str) -> bool:
+    return bool(_HANGUL.search(text or ""))
+
+
 def _key(s: str) -> str:
     return re.sub(r"[\s\W_]+", "", s)
 

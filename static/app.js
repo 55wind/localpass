@@ -274,7 +274,7 @@
   function openPlace(p) {
     state.openPlace = p;
     const body = $("#drawer-body");
-    const info = h("dl", { class: "info" }, row("d.address", p.addr));
+    const info = h("dl", { class: "info" }, ...addressRows(p));
     const about = h("p", { class: "d__about muted", text: "…" });
     const tr = h("p", { class: "d__tr" });
     const reviews = h("div", { class: "d__sec" });
@@ -293,6 +293,13 @@
     loadReviews(p, reviews);
   }
 
+  // 외국어 화면: 번역된 주소 + 택시·지도 앱에 그대로 보여줄 한국어 원래 주소
+  function addressRows(p) {
+    const ko = state.lang !== "ko" && p.addr_ko && p.addr_ko !== p.addr
+      ? [h("dt", { text: t("d.addressKo") }), h("dd", { lang: "ko", text: p.addr_ko })] : [];
+    return [...row("d.address", p.addr), ...ko];
+  }
+
   function row(labelKey, value) {
     if (!value) return [];
     return [h("dt", { text: t(labelKey) }), h("dd", { text: value })];
@@ -305,7 +312,7 @@
       const d = await api(`/api/place/${encodeURIComponent(p.id)}?${q}`);
       if (state.openPlace !== p) return;
       info.replaceChildren(
-        ...row("d.address", p.addr), ...row("d.event", d.event), ...row("d.hours", d.hours),
+        ...addressRows(p), ...row("d.event", d.event), ...row("d.hours", d.hours),
         ...row("d.closed", d.closed), ...row("d.fee", d.fee), ...row("d.tel", d.tel || p.tel),
         ...(d.homepage ? [h("dt", { text: t("d.homepage") }),
           h("dd", {}, h("a", { href: d.homepage, target: "_blank", rel: "noopener noreferrer", text: d.homepage }))] : []),
