@@ -1,0 +1,6 @@
+# 로컬 개발·테스트용 추가 패키지
+-r requirements.txt
+pytest>=8.0
+# AI 작성 판별기를 이 PC에서 돌릴 때만 (AI_DETECTOR=local). PyTorch는 먼저:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124   (GPU)  또는 .../whl/cpu
+transformers>=4.45

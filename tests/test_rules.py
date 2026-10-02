@@ -118,29 +118,25 @@ def test_local_detector_probability_is_monotonic(monkeypatch):
 
 # ── 원격 GPU 콜드 스타트 상태 ───────────────────────────
 
-def test_remote_warm_state(monkeypatch):
-    from ai_pipeline import llm
-    monkeypatch.setattr(llm, "LLM_BASE_URL", "https://example.modal.direct/v1")
-    monkeypatch.setattr(llm, "_warm", {"state": "cold", "started": 0.0, "last_ok": 0.0})
-    started = []
-    monkeypatch.setattr(llm, "_wake", lambda: started.append(1))
-    now = [1000.0]
-    monkeypatch.setattr(llm.time, "time", lambda: now[0])
-
-    assert llm.warm_status(wake=False)["state"] == "cold"          # 상태만 볼 때는 깨우지 않는다
-    assert llm.warm_status(wake=True)["state"] == "starting"       # 사이트 접속 → 켜기 시작
-    llm.warm_status(wake=True)
-    assert len(started) == 1                                        # 켜는 중에는 중복으로 깨우지 않는다
-    llm._mark_ok()
-    assert llm.warm_status()["state"] == "ready"
-    now[0] += llm.LLM_SCALEDOWN_SEC + 1                             # 아무도 안 쓰면 Modal이 꺼졌다고 본다
-    assert llm.warm_status(wake=False)["state"] == "cold"
+def test_remote_warm_status(monkeypatch):
+    from ai_pipeline import remote
+    states = {"https://llm/health": "ready", "https://det/health": "starting"}
+    monkeypatch.setattr(remote, "health_state", lambda url, timeout=4: states[url])
+    assert remote.warm_status([]) == {"remote": False, "state": "ready"}           # 원격 서비스 없음
+    assert remote.warm_status(["https://llm/health"])["state"] == "ready"
+    assert remote.warm_status(list(states))["state"] == "starting"                 # 하나라도 켜는 중이면 켜는 중
+    states["https://det/health"] = "offline"
+    assert remote.warm_status(list(states))["state"] == "offline"
 
 
-def test_local_llm_is_always_ready(monkeypatch):
-    from ai_pipeline import llm
-    monkeypatch.setattr(llm, "LLM_BASE_URL", "http://127.0.0.1:11434/v1")
-    assert llm.warm_status() == {"remote": False, "state": "ready", "elapsed": 0}
+def test_health_state_codes(monkeypatch):
+    from ai_pipeline import remote
+
+    class R:
+        def __init__(self, code): self.status_code = code
+    for code, want in [(200, "ready"), (503, "starting"), (401, "offline")]:
+        monkeypatch.setattr(remote.requests, "get", lambda url, timeout, c=code: R(c))
+        assert remote.health_state("https://x/health") == want
 
 
 # ── TourAPI 공식 번역 매칭 ──────────────────────────────

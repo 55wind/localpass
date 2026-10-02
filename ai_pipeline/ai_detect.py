@@ -9,22 +9,28 @@ import logging
 import requests
 
 import cache
-from ai_pipeline import local_detector
-from config import AI_DETECTOR, DETECTOR_MODEL, GPTZERO_API_KEY
+from ai_pipeline import local_detector, remote
+from config import AI_DETECTOR, DETECTOR_MODEL, DETECTOR_URL, GPTZERO_API_KEY, LLM_API_KEY, LLM_WAKE_TIMEOUT
 
 log = logging.getLogger(__name__)
 
 GPTZERO_ENDPOINT = "https://api.gptzero.me/v2/predict/text"
-MIN_CHARS = {"gptzero": 120, "local": 60}
+MIN_CHARS = {"gptzero": 120, "local": 60, "remote": 60}
 
 
 def backend() -> str:
     """현재 사용하는 판별기: 'local' | 'gptzero' | 'off'"""
     if AI_DETECTOR == "gptzero" and GPTZERO_API_KEY:
         return "gptzero"
+    if AI_DETECTOR == "remote" and DETECTOR_URL:
+        return "remote"
     if AI_DETECTOR == "local" and local_detector.available():
         return "local"
     return "off"
+
+
+def health_url() -> str | None:
+    return f"{DETECTOR_URL}/health" if backend() == "remote" else None
 
 
 def enabled() -> bool:
@@ -58,17 +64,36 @@ def _local(text: str) -> float | None:
         return None
 
 
+def _remote(text: str) -> float | None:
+    """Modal에 올린 같은 판별기(deploy/modal_detector.py)에 점수를 묻고, 확률 변환은 여기서 한다."""
+    for attempt in range(2):
+        try:
+            resp = requests.post(f"{DETECTOR_URL}/discrepancy", json={"text": text[:5000]},
+                                 headers={"Authorization": f"Bearer {LLM_API_KEY}"}, timeout=LLM_WAKE_TIMEOUT)
+        except requests.RequestException as e:
+            log.warning("원격 AI 판별 실패: %s", e)
+            return None
+        if resp.status_code in (502, 503) and attempt == 0 and remote.wait_ready(f"{DETECTOR_URL}/health", LLM_WAKE_TIMEOUT):
+            continue
+        if not resp.ok:
+            log.warning("원격 AI 판별 응답 오류: %s %s", resp.status_code, resp.text[:120])
+            return None
+        return local_detector.to_probability(resp.json()["score"], len(text))
+    return None
+
+
 def check_ai_written(text: str, cache_key: str) -> tuple[float, str] | None:
     """(AI 작성 확률, 판별기 이름) 또는 None."""
     name = backend()
     if name == "off" or len(text) < MIN_CHARS[name]:
         return None
-    ck = [cache_key, name, DETECTOR_MODEL if name == "local" else ""]
+    source = "gptzero" if name == "gptzero" else "local"  # remote도 같은 Fast-DetectGPT 판별기
+    ck = [cache_key, source, DETECTOR_MODEL if source == "local" else ""]
     hit = cache.get("ai_detect", ck)
     if hit is not None:
-        return hit["ai"], name
-    prob = _gptzero(text) if name == "gptzero" else _local(text)
+        return hit["ai"], source
+    prob = {"gptzero": _gptzero, "local": _local, "remote": _remote}[name](text)
     if prob is None:
         return None
     cache.put("ai_detect", ck, {"ai": prob})
-    return prob, name
+    return prob, source

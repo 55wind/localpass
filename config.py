@@ -20,13 +20,12 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://127.0.0.1:11434/v1").rstrip("/"
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b-instruct")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "ollama")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
-# 원격 GPU(Modal): 꺼져 있다 켜지는 데 걸리는 최대 시간, 마지막 사용 후 자동 종료까지 (deploy/modal_qwen.py와 맞출 것)
-LLM_WAKE_TIMEOUT = float(os.getenv("LLM_WAKE_TIMEOUT", "900"))
-LLM_SCALEDOWN_SEC = int(os.getenv("LLM_SCALEDOWN_SEC", "300"))
+# 원격 GPU(Modal)가 꺼져 있다 켜질 때까지 기다리는 최대 시간 (Vercel 함수 최대 300초 안쪽)
+LLM_WAKE_TIMEOUT = float(os.getenv("LLM_WAKE_TIMEOUT", "240"))
 
-# AI 작성 판별: local(무료, Fast-DetectGPT) | gptzero(유료 API) | off
-# 기본값은 GPTZero 키가 있으면 gptzero, 없으면 local
-AI_DETECTOR = os.getenv("AI_DETECTOR", "gptzero" if GPTZERO_API_KEY else "local")
+# AI 작성 판별: local(무료, Fast-DetectGPT를 이 서버에서) | remote(같은 판별기를 Modal에서) | gptzero(유료 API) | off
+DETECTOR_URL = os.getenv("DETECTOR_URL", "").rstrip("/")   # deploy/modal_detector.py 주소
+AI_DETECTOR = os.getenv("AI_DETECTOR", "gptzero" if GPTZERO_API_KEY else "remote" if DETECTOR_URL else "local")
 DETECTOR_MODEL = os.getenv("DETECTOR_MODEL", "Qwen/Qwen2.5-1.5B")
 DETECTOR_DEVICE = os.getenv("DETECTOR_DEVICE", "auto")  # auto | cpu | cuda — GPU 없이 쓰려면 cpu
 MODELS_DIR = Path(os.getenv("MODELS_DIR", str(ROOT / ".models")))
@@ -34,7 +33,8 @@ MODELS_DIR = Path(os.getenv("MODELS_DIR", str(ROOT / ".models")))
 # 장소당 분석할 블로그 글 수
 REVIEWS_PER_PLACE = int(os.getenv("REVIEWS_PER_PLACE", "6"))
 
-CACHE_DIR = ROOT / ".cache"
+# Vercel 함수는 /tmp 에만 쓸 수 있다 (인스턴스가 살아 있는 동안 유지)
+CACHE_DIR = Path("/tmp/localpass-cache") if os.getenv("VERCEL") else ROOT / ".cache"
 DEMO_DIR = ROOT / "data" / "demo"
 
 # UI 언어 → TourAPI 서비스 / LLM 번역 목표 언어

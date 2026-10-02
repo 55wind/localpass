@@ -1,0 +1,14 @@
+.env
+.env.*
+.venv/
+.models/
+.cache/
+.pytest_cache/
+**/__pycache__/
+tests/
+scripts/
+deploy/
+*.pdf
+개발_로직_설계.md
+아이디어_기획서_수정본.md
+requirements-local.txt

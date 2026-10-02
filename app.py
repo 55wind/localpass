@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import catalog
-from ai_pipeline import ai_detect, llm, local_detector
+from ai_pipeline import ai_detect, llm, local_detector, remote
 from config import APP_NAME, LANGS, LLM_MODEL, REGIONS, ROOT
 from data_sources import naver_blog, tour_api
 from personalize import INTERESTS
@@ -30,8 +30,10 @@ def _warm_up():
 
 @app.get("/api/llm/warm")
 def llm_warm():
-    """원격 GPU가 꺼져 있으면 켜기 시작하고 상태를 돌려준다 (화면의 '켜는 중' 표시용)."""
-    return llm.warm_status(wake=True)
+    """원격 GPU·판별기(Modal)가 꺼져 있으면 켜기 시작하고 상태를 돌려준다 (화면의 '켜는 중' 표시용).
+    사이트에 사람이 들어왔을 때만 불리므로, 아무도 안 쓰면 GPU는 켜지지 않는다."""
+    urls = [u for u in ([] if llm.is_local() else [llm.health_url()]) + [ai_detect.health_url()] if u]
+    return remote.warm_status(urls)
 
 Lang = Query("en", pattern="^(en|ja|zh|ko)$")
 
@@ -47,7 +49,7 @@ def status():
         "app": APP_NAME,
         "tour_api": "live" if tour_api.enabled() else "sample",
         "naver": "live" if naver_blog.enabled() else "sample",
-        "llm": {"online": llm.is_online(), "model": LLM_MODEL, **llm.warm_status(wake=False)},
+        "llm": {"online": llm.is_online(), "model": LLM_MODEL, "remote": not llm.is_local()},
         "ai_detector": ai_detect.backend(),
         "langs": list(LANGS),
         "interests": INTERESTS,

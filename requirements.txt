@@ -1,9 +1,6 @@
+# 웹 서버 (Vercel 배포에도 이 파일이 쓰인다 — 가볍게 유지)
 fastapi>=0.115
 uvicorn[standard]>=0.30
 requests>=2.31
 pydantic>=2.7
 python-dotenv>=1.0
-pytest>=8.0
-# 무료 로컬 AI 작성 판별기 (Fast-DetectGPT). PyTorch는 GPU 버전을 먼저 설치:
-#   pip install torch --index-url https://download.pytorch.org/whl/cu124
-transformers>=4.45
