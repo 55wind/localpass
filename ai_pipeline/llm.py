@@ -65,9 +65,28 @@ def chat_json(system: str, user: str, schema: type[T], max_tokens: int = 600) ->
         raise LLMInvalidOutput("invalid structured output") from e
 
 
+def is_local() -> bool:
+    return any(h in LLM_BASE_URL for h in ("127.0.0.1", "localhost"))
+
+
 def is_online() -> bool:
+    """로컬 Ollama는 바로 확인한다. 원격(Modal 등)은 꺼져 있다 켜지는 데 1~2분이 걸려
+    짧은 확인으로는 '꺼짐'으로 오판하므로 설정돼 있으면 켜져 있다고 보고, 실패하면 호출 단계에서 규칙 검사로 폴백한다."""
+    if not is_local():
+        return True
     try:
         r = requests.get(f"{LLM_BASE_URL}/models", headers={"Authorization": f"Bearer {LLM_API_KEY}"}, timeout=3)
         return r.ok
     except requests.RequestException:
         return False
+
+
+def wake() -> None:
+    """원격 GPU 서버를 미리 깨운다 (앱 서버 시작 시 백그라운드에서 호출)."""
+    if is_local():
+        return
+    try:
+        r = requests.get(f"{LLM_BASE_URL}/models", headers={"Authorization": f"Bearer {LLM_API_KEY}"}, timeout=600)
+        log.info("원격 LLM 준비 완료 (%s)", r.status_code)
+    except requests.RequestException as e:
+        log.warning("원격 LLM 깨우기 실패: %s", e)

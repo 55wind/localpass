@@ -25,6 +25,7 @@ LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
 # 기본값은 GPTZero 키가 있으면 gptzero, 없으면 local
 AI_DETECTOR = os.getenv("AI_DETECTOR", "gptzero" if GPTZERO_API_KEY else "local")
 DETECTOR_MODEL = os.getenv("DETECTOR_MODEL", "Qwen/Qwen2.5-1.5B")
+DETECTOR_DEVICE = os.getenv("DETECTOR_DEVICE", "auto")  # auto | cpu | cuda — GPU 없이 쓰려면 cpu
 MODELS_DIR = Path(os.getenv("MODELS_DIR", str(ROOT / ".models")))
 
 # 장소당 분석할 블로그 글 수

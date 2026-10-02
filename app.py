@@ -21,7 +21,8 @@ app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
 @app.on_event("startup")
-def _warm_detector():
+def _warm_up():
+    threading.Thread(target=llm.wake, daemon=True).start()  # 원격(Modal) GPU면 미리 깨워 둔다
     if ai_detect.backend() == "local":
         threading.Thread(target=local_detector.warmup, daemon=True).start()
 

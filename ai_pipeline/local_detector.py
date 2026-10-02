@@ -14,7 +14,7 @@ import math
 import os
 import threading
 
-from config import DETECTOR_MODEL, MODELS_DIR, ROOT
+from config import DETECTOR_DEVICE, DETECTOR_MODEL, MODELS_DIR, ROOT
 
 log = logging.getLogger(__name__)
 
@@ -34,9 +34,9 @@ def _load():
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     device, dtype = "cpu", torch.float32
-    if torch.cuda.is_available():
+    if DETECTOR_DEVICE != "cpu" and torch.cuda.is_available():
         free, _ = torch.cuda.mem_get_info()
-        if free > 4 * 1024 ** 3:  # Ollama(Qwen 7B)가 VRAM을 쓰고 있으면 CPU로
+        if DETECTOR_DEVICE == "cuda" or free > 4 * 1024 ** 3:  # auto: VRAM이 부족하면 CPU로
             device, dtype = "cuda", torch.bfloat16
     # .models/<모델명>/ 에 미리 받아 둔 파일이 있으면 그걸 쓰고, 없으면 Hugging Face에서 받는다
     local = MODELS_DIR / DETECTOR_MODEL.split("/")[-1]
