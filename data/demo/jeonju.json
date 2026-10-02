@@ -1,0 +1,70 @@
+{
+  "_notice": "API 키가 없을 때 쓰는 데모용 샘플. 장소 기본정보는 공개 정보를 요약했고, 리뷰는 필터 동작을 보여주기 위해 만든 가상 글이다.",
+  "places": [
+    {
+      "contentid": "demo-jj-01", "contenttypeid": "12", "category": "attraction",
+      "title": "전주한옥마을",
+      "title_i18n": {"en": "Jeonju Hanok Village", "ja": "全州韓屋村", "zh": "全州韩屋村"},
+      "addr1": "전북특별자치도 전주시 완산구 기린대로 99",
+      "addr_i18n": {"en": "99 Girin-daero, Wansan-gu, Jeonju, Jeonbuk", "ja": "全北特別自治道全州市完山区麒麟大路99", "zh": "全北特别自治道全州市完山区麒麟大路99"},
+      "mapx": "127.1530", "mapy": "35.8150", "tel": "063-282-1330",
+      "tags": ["history", "food"],
+      "overview": "700여 채의 한옥이 모여 있는 도심 한옥 마을. 경기전, 전동성당, 오목대가 걸어서 이어진다.",
+      "hours": "상시 개방 (시설별 상이)",
+      "fee": "무료"
+    },
+    {
+      "contentid": "demo-jj-02", "contenttypeid": "12", "category": "attraction",
+      "title": "경기전",
+      "title_i18n": {"en": "Gyeonggijeon Shrine", "ja": "慶基殿", "zh": "庆基殿"},
+      "addr1": "전북특별자치도 전주시 완산구 태조로 44",
+      "addr_i18n": {"en": "44 Taejo-ro, Wansan-gu, Jeonju, Jeonbuk", "ja": "全北特別自治道全州市完山区太祖路44", "zh": "全北特别自治道全州市完山区太祖路44"},
+      "mapx": "127.1497", "mapy": "35.8153", "tel": "063-281-2788",
+      "tags": ["history"],
+      "overview": "조선 태조 이성계의 어진(초상화)을 모신 곳. 대나무 숲길과 어진박물관이 있다.",
+      "hours": "09:00~18:00 (계절별 변동)",
+      "fee": "유료 (성인 기준 소액)"
+    },
+    {
+      "contentid": "demo-jj-03", "contenttypeid": "38", "category": "shopping",
+      "title": "남부시장",
+      "title_i18n": {"en": "Nambu Market", "ja": "南部市場", "zh": "南部市场"},
+      "addr1": "전북특별자치도 전주시 완산구 풍남문2길 63",
+      "addr_i18n": {"en": "63 Pungnammun 2-gil, Wansan-gu, Jeonju, Jeonbuk", "ja": "全北特別自治道全州市完山区豊南門2キル63", "zh": "全北特别自治道全州市完山区丰南门2街63"},
+      "mapx": "127.1470", "mapy": "35.8130", "tel": "",
+      "tags": ["market", "food", "night"],
+      "overview": "조선 시대부터 이어진 전주의 대표 전통시장. 주말 밤에는 야시장이 열리고 2층에는 청년몰이 있다.",
+      "hours": "점포별 상이 / 야시장 금·토 저녁",
+      "fee": ""
+    },
+    {
+      "contentid": "demo-jj-04", "contenttypeid": "12", "category": "attraction",
+      "title": "전동성당",
+      "title_i18n": {"en": "Jeondong Catholic Church", "ja": "殿洞聖堂", "zh": "殿洞圣堂"},
+      "addr1": "전북특별자치도 전주시 완산구 태조로 51",
+      "addr_i18n": {"en": "51 Taejo-ro, Wansan-gu, Jeonju, Jeonbuk", "ja": "全北特別自治道全州市完山区太祖路51", "zh": "全北特别自治道全州市完山区太祖路51"},
+      "mapx": "127.1491", "mapy": "35.8133", "tel": "",
+      "tags": ["history"],
+      "overview": "한국 천주교 순교 터에 세워진 로마네스크 양식 성당. 미사 시간에는 관람이 제한된다.",
+      "hours": "미사 시간 외 관람 가능",
+      "fee": "무료"
+    }
+  ],
+  "reviews": {
+    "demo-jj-01": [
+      {"title": "<b>전주한옥마을</b> 1박 2일 솔직 후기", "description": "한복 대여는 2시간 1만5천원 정도였는데 주말엔 대여점 앞 대기가 길어요. 메인 거리 길거리 음식은 비싼 편이라 남부시장 가서 먹는 게 나았어요. 오목대 올라가서 지붕 내려다보는 뷰가 제일 좋았음.", "bloggername": "느린여행자", "postdate": "20260906"},
+      {"title": "<b>전주</b> 한옥스테이 협찬 숙박기", "description": "숙소로부터 숙박을 무상으로 제공받아 작성한 후기입니다. 고즈넉한 한옥에서 보내는 하룻밤, 조식까지 완벽했어요. 예약 문의는 카톡 ID: hanok_stay77 로 주세요.", "bloggername": "스테이리뷰", "postdate": "20260912"}
+    ],
+    "demo-jj-02": [
+      {"title": "<b>경기전</b> 대나무숲 사진 포인트", "description": "입장료 내고 들어가면 대나무 숲길이 짧지만 예뻐요. 어진박물관은 생각보다 작아서 20분이면 충분. 오후 4시 넘어서 가면 햇빛이 비스듬히 들어와서 사진이 잘 나와요.", "bloggername": "사진일기", "postdate": "20260828"}
+    ],
+    "demo-jj-03": [
+      {"title": "<b>남부시장</b> 야시장 먹거리 정리", "description": "금요일 7시에 갔더니 이미 줄이 꽤 길었어요. 문어꼬치랑 수제 육전 맛있었고 대부분 5천~1만원. 현금 결제만 되는 데도 있어요. 끝나고 청년몰 2층 구경했는데 일부 가게는 일찍 닫더라고요.", "bloggername": "시장투어", "postdate": "20260920"},
+      {"title": "<b>남부시장</b> 콩나물국밥 원조집 방문", "description": "전주 콩나물국밥 원조로 유명한 곳! 시원한 국물에 수란 넣어 먹는 맛 최고. #광고 #협찬 지금 방문하면 모주 한 잔 서비스!", "bloggername": "맛집탐방러", "postdate": "20260918"},
+      {"title": "<b>전주</b> 전통시장 여행 팁", "description": "전주 남부시장은 다양한 먹거리와 볼거리가 풍부한 전통시장입니다. 야시장에서는 지역의 특색 있는 음식을 맛볼 수 있으며, 청년몰에서는 독창적인 상품을 만나볼 수 있습니다. 전주를 방문한다면 남부시장에서 잊지 못할 추억을 만들어 보시기 바랍니다.", "bloggername": "여행가이드북", "postdate": "20260923"}
+    ],
+    "demo-jj-04": [
+      {"title": "<b>전동성당</b> 미사 시간 주의", "description": "일요일 오전에 갔더니 미사 중이라 내부는 못 봤어요. 외관만 봐도 충분히 예쁘긴 한데 내부 보고 싶으면 평일 오후 추천. 경기전 바로 맞은편이라 묶어서 보기 좋아요.", "bloggername": "주말성지순례", "postdate": "20260601"}
+    ]
+  }
+}

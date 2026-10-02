@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalPass · Korean local reviews, checked</title>
+  <meta name="description" content="Korean blog reviews checked for sponsorship and AI writing, translated next to official tourism data.">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/variable/woff2/SUIT-Variable.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&family=Noto+Sans+SC:wght@400;700;800&display=swap">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='5' fill='%23C8283F'/%3E%3Ctext x='16' y='22' font-size='16' font-weight='800' text-anchor='middle' fill='white' font-family='sans-serif'%3E%EC%B0%90%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#explore" data-i18n="nav.explore">Explore</a>
+
+  <div class="util">
+    <div class="wrap util__inner">
+      <p class="util__status" id="status"></p>
+      <nav class="langs" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ja">日本語</button>
+        <button type="button" data-lang="zh">中文</button>
+        <button type="button" data-lang="ko">한국어</button>
+      </nav>
+    </div>
+  </div>
+
+  <header class="gnb">
+    <div class="wrap gnb__inner">
+      <a class="logo" href="/" aria-label="LocalPass home">
+        <span class="logo__seal" aria-hidden="true">찐</span>
+        <span class="logo__word">LocalPass</span>
+      </a>
+      <nav class="gnb__nav">
+        <a href="#explore" data-i18n="nav.explore">Explore</a>
+        <a href="#how" data-i18n="nav.how">How it works</a>
+        <a href="#check" data-i18n="nav.check">Check a review</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero__inner">
+        <div class="hero__copy">
+          <h1 data-i18n="hero.title">Korean local reviews, checked for ads and AI</h1>
+          <p class="hero__sub" data-i18n="hero.sub"></p>
+          <form class="search" id="search-form" role="search">
+            <label class="sr-only" for="search-input" data-i18n="hero.search">Search</label>
+            <input id="search-input" name="q" type="search" autocomplete="off" maxlength="40" data-i18n-ph="hero.search">
+            <button type="submit" data-i18n="hero.searchBtn">Search</button>
+          </form>
+        </div>
+
+        <figure class="inspect" aria-labelledby="inspect-cap">
+          <div class="inspect__post">
+            <p class="inspect__src">blog.naver.com</p>
+            <p class="inspect__title" data-i18n="demo.title"></p>
+            <p class="inspect__text" data-i18n="demo.text"></p>
+          </div>
+          <ol class="inspect__steps">
+            <li class="ok" data-i18n="demo.s1"></li>
+            <li class="ok" data-i18n="demo.s2"></li>
+            <li class="bad" data-i18n="demo.s3"></li>
+            <li class="ok" data-i18n="demo.s4"></li>
+          </ol>
+          <div class="inspect__verdict">
+            <span class="seal seal--flagged" aria-hidden="true"><span data-i18n="seal.flagged">의심</span></span>
+            <strong data-i18n="b.flagged">Sponsored or AI-like</strong>
+          </div>
+          <figcaption id="inspect-cap" data-i18n="demo.caption"></figcaption>
+        </figure>
+      </div>
+
+      <svg class="skyline" viewBox="0 0 1440 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <g fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+          <!-- 성수: 톱니 지붕 공장과 굴뚝 -->
+          <path d="M40 118V70l34-22v22l34-22v22l34-22v70z"/>
+          <rect x="150" y="30" width="14" height="88"/>
+          <path d="M150 42h14M150 54h14"/>
+          <!-- 아파트 -->
+          <rect x="196" y="56" width="58" height="62"/>
+          <path d="M210 70h8M228 70h8M210 86h8M228 86h8M210 102h8M228 102h8"/>
+          <!-- 남산타워 -->
+          <path d="M330 118V42M322 42h16l-3 14h-10z"/>
+          <path d="M330 42V14"/>
+          <circle cx="330" cy="62" r="6"/>
+          <path d="M296 118c12-22 56-22 68 0"/>
+          <!-- 나무 -->
+          <circle cx="410" cy="88" r="16"/><path d="M410 104v14"/>
+          <circle cx="440" cy="94" r="11"/><path d="M440 105v13"/>
+          <!-- 한옥 (전주) -->
+          <path d="M500 118V86h120v32z"/>
+          <path d="M486 88c20 0 30-8 40-24h68c10 16 20 24 40 24"/>
+          <path d="M540 118V96h16v22M570 98h22v12h-22z"/>
+          <!-- 성당 -->
+          <path d="M690 118V70l24-20 24 20v48z"/>
+          <path d="M714 50V30M706 38h16"/>
+          <path d="M706 118v-20a8 8 0 0 1 16 0v20"/>
+          <!-- 빌딩 -->
+          <rect x="790" y="40" width="44" height="78"/>
+          <rect x="840" y="64" width="36" height="54"/>
+          <path d="M800 54h24M800 70h24M800 86h24M800 102h24"/>
+          <!-- 시장 천막 -->
+          <path d="M930 118V90l20-14 20 14 20-14 20 14 20-14 20 14v28z"/>
+          <path d="M950 118v-16M990 118v-16M1030 118v-16"/>
+          <!-- 나무와 언덕 -->
+          <path d="M1080 118c30-40 110-40 140 0"/>
+          <circle cx="1250" cy="92" r="14"/><path d="M1250 106v12"/>
+          <!-- 공장 -->
+          <path d="M1290 118V78l30-18v18l30-18v18l30-18v58z"/>
+          <rect x="1392" y="44" width="12" height="74"/>
+        </g>
+        <path d="M0 118.5H1440" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </section>
+
+    <section class="explore" id="explore">
+      <div class="wrap">
+        <h2 class="sec-title" data-i18n="region.title">Choose an area</h2>
+        <div class="regions" id="regions" role="tablist"></div>
+
+        <div class="toolbar">
+          <div class="cats" id="cats" role="tablist" aria-label="Category"></div>
+          <div class="toolbar__row">
+            <span class="toolbar__label" data-i18n="tool.interests">Interests</span>
+            <div class="chips" id="chips"></div>
+            <label class="switch">
+              <input type="checkbox" id="show-flagged">
+              <span data-i18n="tool.showFlagged">Show flagged reviews</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="list-head">
+          <p id="list-count" aria-live="polite"></p>
+          <button type="button" class="link-btn" id="list-back" hidden data-i18n="list.back">Back to areas</button>
+        </div>
+        <ul class="grid" id="grid"></ul>
+      </div>
+    </section>
+
+    <section class="how" id="how">
+      <div class="wrap">
+        <h2 class="sec-title" data-i18n="how.title">How a review is checked</h2>
+        <p class="sec-sub" data-i18n="how.sub"></p>
+        <ol class="steps" id="steps"></ol>
+        <p class="note" data-i18n="how.note"></p>
+      </div>
+    </section>
+
+    <section class="check" id="check">
+      <div class="wrap check__inner">
+        <form class="check__form" id="check-form">
+          <h2 class="sec-title" data-i18n="check.title">Check a review yourself</h2>
+          <p class="sec-sub" data-i18n="check.sub"></p>
+          <div class="check__samples">
+            <button type="button" class="pill" data-sample="real" data-i18n="check.tryReal"></button>
+            <button type="button" class="pill" data-sample="ad" data-i18n="check.tryAd"></button>
+            <button type="button" class="pill" data-sample="inject" data-i18n="check.tryInject"></button>
+          </div>
+          <label class="sr-only" for="check-title" data-i18n="check.titlePh"></label>
+          <input id="check-title" maxlength="200" data-i18n-ph="check.titlePh">
+          <label class="sr-only" for="check-text" data-i18n="check.textPh"></label>
+          <textarea id="check-text" rows="6" maxlength="3000" required minlength="10" data-i18n-ph="check.textPh"></textarea>
+          <button type="submit" class="btn" id="check-btn" data-i18n="check.btn">Check review</button>
+        </form>
+        <div class="check__result" id="check-result" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <a class="logo logo--foot" href="/"><span class="logo__seal" aria-hidden="true">찐</span><span class="logo__word">LocalPass</span></a>
+      <div>
+        <p data-i18n="foot.data"></p>
+        <p data-i18n="foot.project"></p>
+        <p data-i18n="foot.team"></p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-modal="true" role="dialog" aria-labelledby="d-title" hidden>
+    <button type="button" class="drawer__close" id="drawer-close" data-i18n-aria="d.close" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="drawer__body" id="drawer-body"></div>
+  </aside>
+
+  <script src="/static/i18n.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
