@@ -33,13 +33,23 @@ Qwen2.5-7B를 [Modal](https://modal.com) L4 GPU에 올려 두고 어느 PC에서
 요청이 있을 때만 켜지고 마지막 요청 5분 뒤 꺼지므로, 안 쓰는 동안은 요금이 없습니다 (무료 플랜 월 $30 크레딧).
 
 ```bash
-pip install modal && modal token new
+pip install modal && modal token new          # GPU 사용에는 Modal 결제수단 등록 필요 (월 $30 무료 크레딧은 그대로)
 modal secret create localpass-llm LLM_API_KEY=<임의의 긴 문자열>
-modal deploy deploy/modal_qwen.py        # 출력된 https://...modal.run 주소
-# .env → LLM_BASE_URL=<주소>/v1, LLM_API_KEY=<위 값>
+modal deploy deploy/modal_qwen.py              # 출력된 https://...modal.direct 주소
 ```
 
-처음 켜질 때 모델 로딩에 1~2분 걸립니다. AI 작성 판별 모델(1.5B)은 GPU가 없으면 CPU로 동작합니다.
+`.env` 설정:
+
+```
+LLM_BASE_URL=<주소>/v1
+LLM_API_KEY=<위에서 만든 값>
+LLM_TIMEOUT=300
+DETECTOR_DEVICE=cpu        # AI 작성 판별 모델(1.5B)도 GPU 없이 — 짧은 글 1건 약 1초
+```
+
+- 앱 서버를 켜는 것만으로는 GPU가 켜지지 않습니다. **누군가 사이트에 들어오거나 분석을 시작할 때만** 켜지고, 마지막 사용 5분 뒤 자동으로 꺼집니다.
+- 켜지는 동안(실측 2~4분) 사이트 하단에 "AI 분석 서버(GPU)를 켜는 중 · 경과 시간"이 표시되고, 준비되면 사라집니다. 켜진 뒤 응답은 1건에 3~4초.
+- 주소는 공개 URL이지만 vLLM API 키로 막혀 있어 키 없이 부르면 401입니다.
 
 ## 필요한 API 키
 
