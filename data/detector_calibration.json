@@ -1,0 +1,45 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B",
+  "method": "Fast-DetectGPT analytic (same reference/scoring model)",
+  "dataset": "KatFish essay+abstract",
+  "n_fit": 200,
+  "n_eval": 200,
+  "short": {
+    "chars": 200,
+    "human": {
+      "mu": 0.3665613609018049,
+      "sigma": 0.9455671280607354
+    },
+    "ai": {
+      "mu": 1.4525969517325041,
+      "sigma": 1.1148446675788641
+    },
+    "threshold": 1.0274144411087036,
+    "auroc_eval": 0.6623,
+    "tpr_eval": 0.5051,
+    "fpr_eval": 0.2376,
+    "auroc_eval_by_genre": {
+      "essay": 0.7836,
+      "abstract": 0.567
+    }
+  },
+  "long": {
+    "chars": 1000,
+    "human": {
+      "mu": 0.3142636021730876,
+      "sigma": 1.0333502577121179
+    },
+    "ai": {
+      "mu": 2.1382377309411176,
+      "sigma": 1.6039010890456067
+    },
+    "threshold": 1.6304547786712646,
+    "auroc_eval": 0.7584,
+    "tpr_eval": 0.5152,
+    "fpr_eval": 0.1287,
+    "auroc_eval_by_genre": {
+      "essay": 0.9239,
+      "abstract": 0.6531
+    }
+  }
+}

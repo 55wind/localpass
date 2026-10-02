@@ -146,22 +146,44 @@ def normalize(item: dict) -> dict | None:
     }
 
 
-def attach_official_translation(places: list[dict], foreign_items: list[dict], max_m: float = 120) -> None:
-    """국문 목록(마스터)에 외국어 서비스의 공식 번역을 좌표로 매칭해 붙인다.
+_KO_SUFFIX = re.compile(r"\s*[（(]([^()（）]*[가-힣][^()（）]*)[)）]\s*$")
+_HANGUL = re.compile(r"[가-힣]")
 
-    국문·외국어 서비스는 contentid가 서로 달라서, 같은 장소는 좌표가 거의 같다는 점을 이용한다.
+
+def split_foreign_title(title: str) -> tuple[str, str]:
+    """'Seongsu Stage 35 (스테이지35 성수)' → ('Seongsu Stage 35', '스테이지35 성수')"""
+    m = _KO_SUFFIX.search(title or "")
+    return (title[: m.start()].strip(), m.group(1).strip()) if m else ((title or "").strip(), "")
+
+
+def _key(s: str) -> str:
+    return re.sub(r"[\s\W_]+", "", s)
+
+
+def attach_official_translation(places: list[dict], foreign_items: list[dict], max_m: float = 40) -> None:
+    """국문 목록(마스터)에 외국어 서비스의 공식 번역을 붙인다.
+
+    국문·외국어 서비스는 contentid가 서로 다르다. 외국어 제목 끝 괄호의 한글 이름이 같으면 그걸로 매칭하고,
+    없으면 좌표로 매칭하되 반경 안에 후보가 딱 하나일 때만 인정한다 (같은 건물의 가게들, 같은 행사장의
+    축제들을 서로 잘못 잇지 않도록). 축제는 행사장 좌표를 공유하는 일이 많아 이름으로만 매칭한다.
     """
-    pool = [f for f in foreign_items if f.get("mapx")]
+    pool = []
+    for f in foreign_items:
+        name, ko = split_foreign_title(f.get("title", ""))
+        if name and not _HANGUL.search(name):  # 제목이 한글뿐이면 번역이 안 된 항목
+            pool.append((f, name, _key(ko)))
+    by_ko = {ko: (f, name) for f, name, ko in pool if ko}
     for place in places:
-        best, best_d = None, max_m
-        for f in pool:
-            if TYPE_TO_CATEGORY.get(str(f.get("contenttypeid"))) != place["category"]:
-                continue
-            d = _distance_m(place, f)
-            if d < best_d:
-                best, best_d = f, d
+        hit = by_ko.get(_key(place["title_ko"]))
+        best, best_name = hit if hit else (None, "")
+        if not hit and place["category"] != "festival":
+            near = [(f, name) for f, name, _ in pool
+                    if TYPE_TO_CATEGORY.get(str(f.get("contenttypeid"))) == place["category"]
+                    and _distance_m(place, f) < max_m]
+            if len(near) == 1:
+                best, best_name = near[0]
         if best:
-            place["title"] = best.get("title") or place["title"]
+            place["title"] = best_name
             place["addr"] = best.get("addr1") or place["addr"]
             place["image"] = place["image"] or _https(best.get("firstimage", ""))
             place["thumb"] = place["thumb"] or _https(best.get("firstimage2", ""))

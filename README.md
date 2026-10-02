@@ -13,6 +13,8 @@ pip install -r requirements.txt
 
 # 2) Qwen2.5-7B-Instruct (로컬, GPU 약 5GB)
 ollama pull qwen2.5:7b-instruct
+#    AI 작성 판별용 Qwen2.5-1.5B(약 3GB)는 처음 쓸 때 .models/ 에 자동으로 내려받습니다
+#    (PyTorch CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu124)
 
 # 3) API 키 (선택 — 없으면 샘플 데이터로 동작)
 copy .env.example .env             # 값 채우기
@@ -30,8 +32,9 @@ python app.py
 | 키 | 발급처 | 용도 | 없을 때 |
 |---|---|---|---|
 | `TOUR_API_KEY` | data.go.kr → "한국관광공사_국문 관광정보 서비스_GW" + 영문·일문·중문 서비스 각각 활용신청 | 장소·축제·운영시간, 공식 외국어 번역 | 샘플 장소 |
-| `NAVER_CLIENT_ID/SECRET` | developers.naver.com → 애플리케이션 등록 → 검색 API | 블로그 후기 수집 (일 25,000회) | 샘플 후기 |
-| `GPTZERO_API_KEY` | gptzero.me → API 플랜 | AI 작성 확률 | Qwen 문체 신호(보조)만 표시 |
+| `NAVER_CLIENT_ID/SECRET` | NAVER API HUB (네이버 클라우드 콘솔) → 블로그 검색 선택 → 애플리케이션 등록 | 블로그 후기 수집 (현재 임시 무료) | 샘플 후기 |
+| (없음) | — | AI 작성 판별: **무료 로컬 판별기**(Fast-DetectGPT + Qwen2.5-1.5B)가 기본 | — |
+| `GPTZERO_API_KEY` (선택) | gptzero.me 유료 API | 넣으면 GPTZero로 전환 | 로컬 판별기 사용 |
 | `LLM_*` | 로컬 Ollama (기본값) 또는 OpenRouter 등 OpenAI 호환 API | 보안 분석·협찬 판단·번역 | 규칙 기반 검사만 (최대 '참고' 배지) |
 
 > TourAPI는 **디코딩(Decoding) 키**를 넣어야 합니다. 인코딩 키를 넣으면 이중 인코딩으로 `SERVICE_KEY_IS_NOT_REGISTERED` 오류가 납니다.
@@ -46,7 +49,7 @@ python app.py
  → ③ 협찬 표기 규칙           ai_pipeline/sponsor_rules.py  공정위 표기(협찬·제공받아·원고료·체험단…)
  → ④ Qwen 2차 보안 분석       정상 / 의심 / 차단 (구조화 출력만 반환)
  → ⑤ Qwen 문맥 분석·번역      표기 없는 홍보 판단, AI 문체 보조 신호, 다국어 요약
- → ⑥ GPTZero AI 작성 판별     원문(한국어) 기준
+ → ⑥ AI 작성 판별             로컬 Fast-DetectGPT(무료, 기본) 또는 GPTZero — 원문(한국어) 기준
  → ⑦ 신뢰도 점수·도장         신뢰 / 참고 / 협찬·AI 의심 / 차단
 ```
 
@@ -61,14 +64,15 @@ python app.py
 app.py                 FastAPI 서버 (API + 정적 파일)
 catalog.py             장소·상세·리뷰 스트리밍 서비스 계층 (실데이터 ↔ 샘플 전환)
 config.py              환경변수, 지역·카테고리 설정
-data_sources/          tour_api.py (TourAPI 4.0), naver_blog.py
+data_sources/          tour_api.py (TourAPI 4.0), naver_blog.py (NAVER API HUB 블로그 검색)
 security/              pii.py, injection.py
-ai_pipeline/           trust_filter.py (핵심), llm.py (Qwen), ai_detect.py (GPTZero), translate.py, schema.py
+ai_pipeline/           trust_filter.py (핵심), llm.py (Qwen), ai_detect.py, local_detector.py (Fast-DetectGPT), translate.py, schema.py
 merge.py               장소 ↔ 블로그 글 매칭, 신뢰도 요약
 personalize.py         관심사 태그·정렬
 static/                index.html, styles.css, app.js, i18n.js
 data/demo/             API 키 없을 때 쓰는 샘플 (리뷰는 데모용 가상 글)
 scripts/prefetch.py    시연 전 캐시 예열
+scripts/calibrate_detector.py  KatFish 벤치마크로 AI 판별기 보정 → data/detector_calibration.json
 tests/                 규칙 모듈 단위 테스트
 ```
 
@@ -80,9 +84,11 @@ tests/                 규칙 모듈 단위 테스트
 | LLM | Claude Sonnet | Qwen2.5-7B-Instruct (보안추가본 기준) | 로컬 실행으로 외부 전송 없음, OpenAI 호환이라 호스팅 전환 쉬움 |
 | 지역 조회 | `areaCode` / `sigunguCode` | 좌표+반경(`locationBasedList2`), 축제는 법정동 코드 | 2025 TourAPI 개편으로 areaCode는 삭제 예정 |
 | 블로그 본문 | iframe 크롤링(선택) | 검색 API 요약만 사용 | 네이버 블로그 robots.txt가 AI·RAG 목적 봇 접근을 명시적으로 금지 |
+| AI 작성 판별 | GPTZero API (유료) | Fast-DetectGPT 로컬 판별기 (무료, GPTZero는 선택) | 비용 0원, 리뷰 원문이 외부 서비스로 나가지 않음 |
 
 ## 한계 (코딩설명서 기재용)
 
-- AI 작성 판별은 **참고 지표**입니다. 검색 API 요약은 짧아(약 100~200자) GPTZero 판별 신뢰도가 떨어지며, 120자 미만은 판별하지 않습니다.
+- AI 작성 판별은 **참고 지표**입니다. 검색 API 요약은 짧아(약 100~200자) 판별 신뢰도가 떨어지며, 60자 미만은 판별하지 않습니다.
+  로컬 판별기는 학생 에세이·논문 초록(KatFish)으로 보정했기 때문에 블로그 후기에서는 성능이 다를 수 있습니다. 보정 결과는 `data/detector_calibration.json` 참고.
 - Qwen 7B는 고유명사 음차·번역에서 가끔 오류를 냅니다. 공식 번역(TourAPI 외국어 서비스)을 1순위로, 장소명은 원문에 공식 표기를 덧붙여 보정합니다.
 - 협찬 문맥 판단은 표기 없는 홍보를 완벽히 잡지 못합니다. 판정 근거를 화면에 그대로 보여주고, 의심 글도 숨기지 않고 토글로 볼 수 있게 했습니다.

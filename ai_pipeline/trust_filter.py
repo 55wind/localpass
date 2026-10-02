@@ -92,6 +92,9 @@ def trim_summary(text: str, max_sentences: int = 3, max_chars: int = 360) -> str
     return out if len(out) <= max_chars else out[:max_chars].rsplit(" ", 1)[0] + "…"
 
 
+AI_WEIGHT = {"gptzero": 0.5, "local": 0.5, "qwen": 0.4}  # 전용 판별기가 포함되면 더 크게
+
+
 def compute_trust(*, sponsored_rule: bool, llm_sponsor_conf: float, ai_prob: float | None,
                   ai_source: str, security: str) -> float:
     score = 1.0
@@ -100,8 +103,8 @@ def compute_trust(*, sponsored_rule: bool, llm_sponsor_conf: float, ai_prob: flo
     else:
         score -= 0.5 * llm_sponsor_conf
     if ai_prob is not None:
-        # GPTZero는 전문 탐지기라 가중치를 크게, Qwen 문체 신호는 보조 지표라 작게
-        score -= (0.5 if ai_source == "gptzero" else 0.4) * ai_prob
+        # 전용 판별기는 가중치를 크게, Qwen 문체 신호는 보조 지표라 작게
+        score -= AI_WEIGHT.get(ai_source, 0.4) * ai_prob
     if security == "suspicious":
         score -= 0.2
     return round(max(0.0, min(1.0, score)), 2)
@@ -241,12 +244,16 @@ def analyze_post(post: dict, lang: str = "en", use_llm: bool = True,
                     result.is_sponsored, result.sponsor_source = True, "llm"
     result.analysis_failed = analysis is None  # 모델이 꺼져 있었거나 분석에 실패
 
-    # ⑥ AI 작성 판별 — GPTZero 우선, 없으면 Qwen 문체 신호를 보조로만 사용
-    ai = ai_detect.check_ai_written(text, cache_key=key)
-    if ai is not None:
-        result.ai_probability, result.ai_source = ai, "gptzero"
+    # ⑥ AI 작성 판별 — 단일 모델로 확정하지 않는다: 전용 판별기(로컬 Fast-DetectGPT 또는 GPTZero)와
+    #    Qwen 문체 신호를 평균한다. 판별기를 못 쓰면 문체 신호만 (가중치 낮음).
+    detected = ai_detect.check_ai_written(text, cache_key=key)
+    result.ai_style_score = ai_style
+    if detected is not None:
+        result.ai_detector_probability, result.ai_source = detected
     elif ai_style is not None:
-        result.ai_probability, result.ai_source = ai_style, "qwen"
+        result.ai_source = "qwen"
+    signals = [p for p in (result.ai_detector_probability, ai_style) if p is not None]
+    result.ai_probability = round(sum(signals) / len(signals), 3) if signals else None
 
     # ⑦ 종합
     result.trust_score = compute_trust(

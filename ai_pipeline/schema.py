@@ -51,8 +51,10 @@ class TrustResult(BaseModel):
     sponsor_markers: list[str] = []
     self_paid_claim: bool = False
 
-    ai_probability: Optional[float] = None   # None = 판별 불가
-    ai_source: Literal["gptzero", "qwen", "none"] = "none"
+    ai_probability: Optional[float] = None          # 종합 AI 작성 확률 (판별기 + 문체 신호 평균), None = 판별 불가
+    ai_source: Literal["gptzero", "local", "qwen", "none"] = "none"
+    ai_detector_probability: Optional[float] = None  # 전용 판별기(로컬 Fast-DetectGPT / GPTZero) 결과
+    ai_style_score: Optional[float] = None           # Qwen 문체 신호 (보조)
 
     analysis_failed: bool = False    # LLM 분석이 실패해 판단 근거가 부족함
     trust_score: float = 0.0

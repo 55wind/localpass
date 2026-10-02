@@ -21,6 +21,12 @@ LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b-instruct")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "ollama")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
 
+# AI 작성 판별: local(무료, Fast-DetectGPT) | gptzero(유료 API) | off
+# 기본값은 GPTZero 키가 있으면 gptzero, 없으면 local
+AI_DETECTOR = os.getenv("AI_DETECTOR", "gptzero" if GPTZERO_API_KEY else "local")
+DETECTOR_MODEL = os.getenv("DETECTOR_MODEL", "Qwen/Qwen2.5-1.5B")
+MODELS_DIR = Path(os.getenv("MODELS_DIR", str(ROOT / ".models")))
+
 # 장소당 분석할 블로그 글 수
 REVIEWS_PER_PLACE = int(os.getenv("REVIEWS_PER_PLACE", "6"))
 

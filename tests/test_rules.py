@@ -104,6 +104,43 @@ def test_analyze_post_without_llm_flags_disclosure():
     assert r.is_sponsored and r.sponsor_source == "rule" and r.badge == "flagged"
 
 
+# ── 로컬 AI 판별기 확률 변환 ────────────────────────────
+
+def test_local_detector_probability_is_monotonic(monkeypatch):
+    from ai_pipeline import local_detector
+    calib = {"short": {"human": {"mu": 0.0, "sigma": 1.0}, "ai": {"mu": 3.0, "sigma": 1.0}, "threshold": 1.5},
+             "long": {"human": {"mu": 0.0, "sigma": 1.0}, "ai": {"mu": 5.0, "sigma": 1.0}, "threshold": 2.5}}
+    monkeypatch.setitem(local_detector._state, "calib", calib)
+    low, mid, high = (local_detector.to_probability(s, 150) for s in (-1.0, 1.5, 4.0))
+    assert low < 0.1 < mid < high and high > 0.9
+    assert abs(mid - 0.5) < 1e-6
+
+
+# ── TourAPI 공식 번역 매칭 ──────────────────────────────
+
+def test_official_translation_matching():
+    from data_sources import tour_api
+    assert tour_api.split_foreign_title("Seongsu Stage 35 (스테이지35 성수)") == ("Seongsu Stage 35", "스테이지35 성수")
+    assert tour_api.split_foreign_title("華夫木工坊（와플목공방）") == ("華夫木工坊", "와플목공방")
+    places = [
+        {"title_ko": "와플목공방", "title": "와플목공방", "category": "attraction", "mapx": "127.0", "mapy": "37.5",
+         "addr": "", "image": "", "thumb": "", "foreign": None, "official_translation": False},
+        {"title_ko": "서울숲", "title": "서울숲", "category": "attraction", "mapx": "127.0374", "mapy": "37.5444",
+         "addr": "", "image": "", "thumb": "", "foreign": None, "official_translation": False},
+        {"title_ko": "스테이지35 성수", "title": "스테이지35 성수", "category": "culture", "mapx": "127.05", "mapy": "37.54",
+         "addr": "", "image": "", "thumb": "", "foreign": None, "official_translation": False},
+    ]
+    foreign = [
+        {"contentid": "1", "contenttypeid": "76", "title": "Waple Wood Artwork Place (와플목공방)", "mapx": "126.0", "mapy": "36.0"},
+        {"contentid": "2", "contenttypeid": "76", "title": "Seoul Forest", "mapx": "127.0375", "mapy": "37.5443"},
+        {"contentid": "3", "contenttypeid": "78", "title": "스테이지35 성수", "mapx": "127.05", "mapy": "37.54"},
+    ]
+    tour_api.attach_official_translation(places, foreign)
+    assert places[0]["title"] == "Waple Wood Artwork Place"      # 괄호 속 한글 이름으로 매칭 (좌표가 멀어도)
+    assert places[1]["title"] == "Seoul Forest"                  # 좌표로 매칭
+    assert not places[2]["official_translation"]                 # 한글뿐인 제목은 번역으로 보지 않음
+
+
 # ── 보조 유틸 ────────────────────────────────────────────
 
 def test_clean_html():
@@ -131,5 +168,11 @@ def test_relevant_posts_and_query():
     posts = [{"title": "<b>어니언</b> 성수 후기", "description": ""}, {"title": "다른 카페", "description": ""},
              {"title": "어니언성수 빵", "description": ""}]
     assert len(merge.relevant_posts("어니언 성수", posts)) == 2
+    assert merge.relevant_posts("서울숲", [{"title": "게임 공략", "description": "성수"}]) == []
+    picked = merge.pick_posts("어니언 성수",
+                              [{"link": "a", "title": "어니언 성수", "postdate": "20260101"}],
+                              [{"link": "a", "title": "어니언 성수", "postdate": "20260101"},
+                               {"link": "b", "title": "성수동 어니언", "postdate": "20260901"}], limit=5)
+    assert [p["link"] for p in picked] == ["b", "a"]
     assert merge.blog_query("어니언 성수", "성수") == "어니언 성수"
     assert merge.blog_query("서울숲", "성수") == "성수 서울숲"

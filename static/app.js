@@ -378,15 +378,16 @@
       else signals.push(["ok", t("sig.sponsorNone")]);
       if (r.self_paid_claim) signals.push(["info", t("sig.selfPaid")]);
 
-      if (r.ai_source === "gptzero") {
-        const pct = Math.round(r.ai_probability * 100);
-        signals.push([pct >= 50 ? "bad" : pct >= 25 ? "warn" : "ok", t("sig.aiGpt", { p: pct })]);
-      } else if (r.ai_source === "qwen") {
-        const lvl = r.ai_probability >= 0.7 ? "high" : r.ai_probability >= 0.3 ? "medium" : "low";
-        signals.push([lvl === "high" ? "bad" : lvl === "medium" ? "warn" : "ok", t("sig.aiQwen", { level: t(`lvl.${lvl}`) })]);
-      } else {
-        signals.push(["info", t("sig.aiNone")]);
+      if (r.ai_detector_probability != null) {
+        const pct = Math.round(r.ai_detector_probability * 100);
+        signals.push([pct >= 60 ? "bad" : pct >= 35 ? "warn" : "ok",
+          t(r.ai_source === "gptzero" ? "sig.aiGpt" : "sig.aiLocal", { p: pct })]);
       }
+      if (r.ai_style_score != null) {
+        const lvl = r.ai_style_score >= 0.7 ? "high" : r.ai_style_score >= 0.3 ? "medium" : "low";
+        signals.push([lvl === "high" ? "bad" : lvl === "medium" ? "warn" : "ok", t("sig.aiQwen", { level: t(`lvl.${lvl}`) })]);
+      }
+      if (r.ai_detector_probability == null && r.ai_style_score == null) signals.push(["info", t("sig.aiNone")]);
       signals.push(r.security === "suspicious" ? ["warn", t("sig.secSusp")] : ["ok", t("sig.secNormal")]);
     }
     const pii = Object.values(r.pii_found || {}).reduce((a, b) => a + b, 0);

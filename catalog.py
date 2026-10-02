@@ -122,6 +122,10 @@ def _text(v: str) -> str:
     return re.sub(r"<[^>]+>", "", v).strip()
 
 
+def _ymd(v: str) -> str:
+    return f"{v[:4]}.{v[4:6]}.{v[6:8]}" if len(v) == 8 and v.isdigit() else v
+
+
 def _first(d: dict, keys: list[str]) -> str:
     return next((_text(d[k]) for k in keys if d.get(k)), "")
 
@@ -143,7 +147,7 @@ def place_detail(place_id: str, type_id: str, lang: str, foreign_id: str = "", f
         tr = translate.translate_detail(overview, hours, fee, lang)
         overview, hours, fee, translated_by = tr["overview"], tr["hours"], tr["fee"], "qwen"
     homepage = re.search(r'href="([^"]+)"', d.get("homepage", "") or "")
-    event = f"{d['eventstartdate']} ~ {d.get('eventenddate', '')}" if d.get("eventstartdate") else ""
+    event = " ~ ".join(_ymd(d[k]) for k in ("eventstartdate", "eventenddate") if d.get(k))
     return {"overview": overview, "hours": hours, "fee": fee, "closed": _first(d, _CLOSED),
             "tel": _text(d.get("tel", "") or d.get("infocenter", "")), "event": event,
             "homepage": homepage.group(1) if homepage else "", "translated_by": translated_by}
@@ -156,8 +160,10 @@ def _collect_posts(place_id: str, title_ko: str, region_key: str) -> tuple[list[
     query = merge.blog_query(title_ko, hint)
     if naver_blog.enabled():
         try:
-            posts = naver_blog.search_blog_posts(query, display=max(10, REVIEWS_PER_PLACE * 2))
-            return merge.relevant_posts(title_ko, posts)[:REVIEWS_PER_PLACE], "live", query
+            # API HUB의 관련도순은 오래된 외부 블로그가 섞여, 최신순과 합쳐서 관련 글만 고른다
+            recent = naver_blog.search_blog_posts(query, display=50, sort="date")
+            similar = naver_blog.search_blog_posts(query, display=30, sort="sim")
+            return merge.pick_posts(title_ko, recent, similar, limit=REVIEWS_PER_PLACE), "live", query
         except naver_blog.NaverApiError as e:
             log.error("네이버 API 오류 → 샘플로 대체: %s", e)
     key, _ = _find_demo_item(place_id)

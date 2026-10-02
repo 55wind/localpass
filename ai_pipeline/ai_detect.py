@@ -1,55 +1,74 @@
-"""GPTZero API — AI 작성 여부 판별.
+"""AI 작성 여부 판별 — 무료 로컬 판별기(기본) 또는 GPTZero API.
 
-- 원문(한국어, 개인정보 마스킹 후)을 그대로 보낸다. 번역본을 보내면 정확도가 떨어진다.
-- 종량제라 실패해도 재시도하지 않고 None(판별 불가)으로 폴백한다.
-- 너무 짧은 글은 판별 신뢰도가 낮아 호출하지 않는다.
+- 원문(한국어, 개인정보 마스킹 후)을 그대로 넣는다. 번역본을 넣으면 정확도가 떨어진다.
+- 실패해도 재시도하지 않고 None(판별 불가)으로 폴백한다.
+- 너무 짧은 글은 판별 신뢰도가 낮아 판별하지 않는다.
 """
 import logging
 
 import requests
 
 import cache
-from config import GPTZERO_API_KEY
+from ai_pipeline import local_detector
+from config import AI_DETECTOR, DETECTOR_MODEL, GPTZERO_API_KEY
 
 log = logging.getLogger(__name__)
 
-ENDPOINT = "https://api.gptzero.me/v2/predict/text"
-MIN_CHARS = 120
+GPTZERO_ENDPOINT = "https://api.gptzero.me/v2/predict/text"
+MIN_CHARS = {"gptzero": 120, "local": 60}
+
+
+def backend() -> str:
+    """현재 사용하는 판별기: 'local' | 'gptzero' | 'off'"""
+    if AI_DETECTOR == "gptzero" and GPTZERO_API_KEY:
+        return "gptzero"
+    if AI_DETECTOR == "local" and local_detector.available():
+        return "local"
+    return "off"
 
 
 def enabled() -> bool:
-    return bool(GPTZERO_API_KEY)
+    return backend() != "off"
 
 
-def _extract_ai_prob(data: dict) -> float | None:
-    doc = (data.get("documents") or [{}])[0]
-    probs = doc.get("class_probabilities") or {}
-    if "ai" in probs:
-        # 혼합(mixed) 문서는 절반만 AI 작성으로 본다
-        return float(probs["ai"]) + 0.5 * float(probs.get("mixed", 0))
-    if "completely_generated_prob" in doc:
-        return float(doc["completely_generated_prob"])
-    return None
-
-
-def check_ai_written(text: str, cache_key: str) -> float | None:
-    if not enabled() or len(text) < MIN_CHARS:
-        return None
-    hit = cache.get("gptzero", cache_key)
-    if hit is not None:
-        return hit.get("ai")
+def _gptzero(text: str) -> float | None:
     try:
         resp = requests.post(
-            ENDPOINT,
+            GPTZERO_ENDPOINT,
             headers={"x-api-key": GPTZERO_API_KEY, "Content-Type": "application/json"},
             json={"document": text, "multilingual": True},
             timeout=30,
         )
         resp.raise_for_status()
-        prob = _extract_ai_prob(resp.json())
+        doc = (resp.json().get("documents") or [{}])[0]
     except (requests.RequestException, ValueError) as e:
         log.warning("GPTZero 호출 실패: %s", e)
         return None
-    if prob is not None:
-        cache.put("gptzero", cache_key, {"ai": prob})
-    return prob
+    probs = doc.get("class_probabilities") or {}
+    if "ai" in probs:
+        return float(probs["ai"]) + 0.5 * float(probs.get("mixed", 0))  # 혼합 문서는 절반만 AI로
+    return float(doc["completely_generated_prob"]) if "completely_generated_prob" in doc else None
+
+
+def _local(text: str) -> float | None:
+    try:
+        return local_detector.ai_probability(text)
+    except Exception as e:  # 모델 로드 실패·메모리 부족 등 — 판별 불가로 처리
+        log.warning("로컬 AI 판별 실패: %s", e)
+        return None
+
+
+def check_ai_written(text: str, cache_key: str) -> tuple[float, str] | None:
+    """(AI 작성 확률, 판별기 이름) 또는 None."""
+    name = backend()
+    if name == "off" or len(text) < MIN_CHARS[name]:
+        return None
+    ck = [cache_key, name, DETECTOR_MODEL if name == "local" else ""]
+    hit = cache.get("ai_detect", ck)
+    if hit is not None:
+        return hit["ai"], name
+    prob = _gptzero(text) if name == "gptzero" else _local(text)
+    if prob is None:
+        return None
+    cache.put("ai_detect", ck, {"ai": prob})
+    return prob, name

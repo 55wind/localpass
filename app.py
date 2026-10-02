@@ -1,6 +1,7 @@
 """LocalPass 웹 서버 (FastAPI) — `python app.py` 로 실행 후 http://127.0.0.1:8000"""
 import json
 import logging
+import threading
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
@@ -8,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import catalog
-from ai_pipeline import ai_detect, llm
+from ai_pipeline import ai_detect, llm, local_detector
 from config import APP_NAME, LANGS, LLM_MODEL, REGIONS, ROOT
 from data_sources import naver_blog, tour_api
 from personalize import INTERESTS
@@ -17,6 +18,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 app = FastAPI(title=APP_NAME)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+
+@app.on_event("startup")
+def _warm_detector():
+    if ai_detect.backend() == "local":
+        threading.Thread(target=local_detector.warmup, daemon=True).start()
 
 Lang = Query("en", pattern="^(en|ja|zh|ko)$")
 
@@ -33,7 +40,7 @@ def status():
         "tour_api": "live" if tour_api.enabled() else "sample",
         "naver": "live" if naver_blog.enabled() else "sample",
         "llm": {"online": llm.is_online(), "model": LLM_MODEL},
-        "gptzero": ai_detect.enabled(),
+        "ai_detector": ai_detect.backend(),
         "langs": list(LANGS),
         "interests": INTERESTS,
     }

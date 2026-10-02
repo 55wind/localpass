@@ -16,14 +16,42 @@ def blog_query(place_title: str, search_hint: str = "") -> str:
     return title
 
 
-def relevant_posts(place_title: str, posts: list[dict], min_keep: int = 2) -> list[dict]:
-    """장소명이 제목·본문에 실제로 들어간 글만 남긴다 (부분 일치). 너무 적으면 원본 유지."""
-    core = _norm(re.sub(r"\(.*?\)|\[.*?\]", "", place_title))
-    if len(core) < 2:
-        return posts
-    matched = [p for p in posts
-               if core in _norm(clean_html(p.get("title", ""))) or core in _norm(clean_html(p.get("description", "")))]
-    return matched if len(matched) >= min_keep else posts
+def relevant_posts(place_title: str, posts: list[dict]) -> list[dict]:
+    """장소명의 단어(2글자 이상)가 제목·요약에 모두 들어간 글만 남긴다.
+
+    '어니언 성수' → '어니언'과 '성수'가 각각 있으면 인정 ('성수동 어니언', '어니언성수' 모두 통과).
+    엉뚱한 글을 분석해 보여주느니 0건이 낫기 때문에, 맞는 글이 없으면 빈 목록을 돌려준다.
+    """
+    tokens = _tokens(place_title)
+    def ok(p: dict) -> bool:
+        body = _norm(clean_html(p.get("title", "")) + clean_html(p.get("description", "")))
+        return all(t in body for t in tokens)
+    return [p for p in posts if ok(p)]
+
+
+def _tokens(place_title: str) -> list[str]:
+    tokens = [_norm(t) for t in re.sub(r"\(.*?\)|\[.*?\]", "", place_title).split()]
+    return [t for t in tokens if len(t) >= 2] or [_norm(place_title)]
+
+
+def pick_posts(place_title: str, *result_lists: list[dict], limit: int) -> list[dict]:
+    """여러 검색 결과(최신순·관련도순)를 합쳐 중복을 빼고 관련 글만 limit개 고른다.
+
+    제목에 장소명이 들어간 글(그 장소에 대한 후기)을 먼저, 본문에 스치듯 언급한 글은 나중에 — 같은 순위면 최신 글 우선.
+    """
+    seen, merged = set(), []
+    for posts in result_lists:
+        for p in posts:
+            if p.get("link") not in seen:
+                seen.add(p.get("link"))
+                merged.append(p)
+    tokens = _tokens(place_title)
+
+    def rank(p: dict):
+        in_title = all(t in _norm(clean_html(p.get("title", ""))) for t in tokens)
+        return (0 if in_title else 1, -int(p.get("postdate") or 0))
+
+    return sorted(relevant_posts(place_title, merged), key=rank)[:limit]
 
 
 def summarize_trust(results: list[dict]) -> dict:
