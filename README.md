@@ -27,6 +27,20 @@ python app.py
 - 발표 전 `python scripts/prefetch.py` 로 분석 결과를 캐시에 미리 채워 두면 화면이 즉시 뜹니다 (리뷰 1건당 Qwen 4~8초).
 - 테스트: `python -m pytest -q`
 
+### GPU가 없는 PC에서 쓰기 — Modal (선택)
+
+Qwen2.5-7B를 [Modal](https://modal.com) L4 GPU에 올려 두고 어느 PC에서든 부를 수 있습니다.
+요청이 있을 때만 켜지고 마지막 요청 5분 뒤 꺼지므로, 안 쓰는 동안은 요금이 없습니다 (무료 플랜 월 $30 크레딧).
+
+```bash
+pip install modal && modal token new
+modal secret create localpass-llm LLM_API_KEY=<임의의 긴 문자열>
+modal deploy deploy/modal_qwen.py        # 출력된 https://...modal.run 주소
+# .env → LLM_BASE_URL=<주소>/v1, LLM_API_KEY=<위 값>
+```
+
+처음 켜질 때 모델 로딩에 1~2분 걸립니다. AI 작성 판별 모델(1.5B)은 GPU가 없으면 CPU로 동작합니다.
+
 ## 필요한 API 키
 
 | 키 | 발급처 | 용도 | 없을 때 |
