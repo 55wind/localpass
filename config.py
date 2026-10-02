@@ -20,6 +20,9 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://127.0.0.1:11434/v1").rstrip("/"
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b-instruct")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "ollama")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
+# 원격 GPU(Modal): 꺼져 있다 켜지는 데 걸리는 최대 시간, 마지막 사용 후 자동 종료까지 (deploy/modal_qwen.py와 맞출 것)
+LLM_WAKE_TIMEOUT = float(os.getenv("LLM_WAKE_TIMEOUT", "900"))
+LLM_SCALEDOWN_SEC = int(os.getenv("LLM_SCALEDOWN_SEC", "300"))
 
 # AI 작성 판별: local(무료, Fast-DetectGPT) | gptzero(유료 API) | off
 # 기본값은 GPTZero 키가 있으면 gptzero, 없으면 local

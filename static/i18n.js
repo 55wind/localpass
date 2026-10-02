@@ -1,6 +1,11 @@
 // UI 문구 (en / ja / zh / ko). {n} 같은 자리표시자는 t()에서 치환한다.
 window.I18N = {
   en: {
+    "warm.starting": "Starting the AI server (GPU) · {t}",
+    "warm.startingSub": "It takes 1–2 minutes after a quiet spell. It switches itself off 5 minutes after the last use, so idle time costs nothing.",
+    "warm.ready": "AI server is ready",
+    "warm.offline": "Couldn't reach the AI server",
+    "warm.offlineSub": "Only rule-based checks are running for now. Reload the page to try again.",
     "status.sample": "Sample data mode. Add API keys to .env to load live places and reviews.",
     "status.live": "Live data from the Korea Tourism Organization and Naver Blog search",
     "status.llmOff": "The AI model is offline, so only rule-based checks are running.",
@@ -65,6 +70,11 @@ window.I18N = {
     "foot.team": "Team: 류황규, 박건우, 홍승우, 황지룡",
   },
   ja: {
+    "warm.starting": "AIサーバー（GPU）を起動中 · {t}",
+    "warm.startingSub": "しばらく使われていないと起動に1〜2分かかります。最後の利用から5分で自動停止するため、待機中の料金はかかりません。",
+    "warm.ready": "AIサーバーの準備ができました",
+    "warm.offline": "AIサーバーに接続できませんでした",
+    "warm.offlineSub": "現在はルールによるチェックのみ実行しています。ページを再読み込みしてもう一度お試しください。",
     "status.sample": "サンプルデータで表示中です。.env にAPIキーを設定すると実データになります。",
     "status.live": "韓国観光公社とNAVERブログ検索のリアルタイムデータ",
     "status.llmOff": "AIモデルがオフラインのため、ルールによるチェックのみ実行しています。",
@@ -129,6 +139,11 @@ window.I18N = {
     "foot.team": "チーム: 류황규, 박건우, 홍승우, 황지룡",
   },
   zh: {
+    "warm.starting": "正在启动 AI 服务器（GPU）· {t}",
+    "warm.startingSub": "闲置一段时间后启动需要 1–2 分钟。最后一次使用 5 分钟后会自动关闭，闲置时不产生费用。",
+    "warm.ready": "AI 服务器已就绪",
+    "warm.offline": "无法连接 AI 服务器",
+    "warm.offlineSub": "目前仅运行规则检查。请刷新页面后重试。",
     "status.sample": "当前为示例数据。在 .env 中填写 API 密钥即可加载实时数据。",
     "status.live": "实时数据来自韩国观光公社与 Naver 博客搜索",
     "status.llmOff": "AI 模型离线，目前仅运行规则检查。",
@@ -193,6 +208,11 @@ window.I18N = {
     "foot.team": "团队：류황규, 박건우, 홍승우, 황지룡",
   },
   ko: {
+    "warm.starting": "AI 분석 서버(GPU)를 켜는 중 · {t}",
+    "warm.startingSub": "한동안 쓰지 않으면 켜지는 데 1~2분 걸립니다. 마지막 사용 5분 뒤 자동으로 꺼져서, 쓰지 않는 동안에는 요금이 나가지 않습니다.",
+    "warm.ready": "AI 분석 서버 준비 완료",
+    "warm.offline": "AI 분석 서버에 연결하지 못했습니다",
+    "warm.offlineSub": "지금은 규칙 기반 검사만 실행합니다. 새로고침해서 다시 시도해 주세요.",
     "status.sample": "샘플 데이터로 보고 있습니다. .env에 API 키를 넣으면 실데이터로 바뀝니다.",
     "status.live": "한국관광공사·네이버 블로그 검색 실데이터",
     "status.llmOff": "AI 모델이 꺼져 있어 규칙 기반 검사만 실행 중입니다.",

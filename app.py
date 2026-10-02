@@ -22,9 +22,16 @@ app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 @app.on_event("startup")
 def _warm_up():
-    threading.Thread(target=llm.wake, daemon=True).start()  # 원격(Modal) GPU면 미리 깨워 둔다
+    # 원격(Modal) GPU는 여기서 깨우지 않는다 — 아무도 안 쓰는데 켜지면 요금이 나간다.
+    # 사이트에 사람이 들어오면 /api/llm/warm 으로 깨운다.
     if ai_detect.backend() == "local":
         threading.Thread(target=local_detector.warmup, daemon=True).start()
+
+
+@app.get("/api/llm/warm")
+def llm_warm():
+    """원격 GPU가 꺼져 있으면 켜기 시작하고 상태를 돌려준다 (화면의 '켜는 중' 표시용)."""
+    return llm.warm_status(wake=True)
 
 Lang = Query("en", pattern="^(en|ja|zh|ko)$")
 
@@ -40,7 +47,7 @@ def status():
         "app": APP_NAME,
         "tour_api": "live" if tour_api.enabled() else "sample",
         "naver": "live" if naver_blog.enabled() else "sample",
-        "llm": {"online": llm.is_online(), "model": LLM_MODEL},
+        "llm": {"online": llm.is_online(), "model": LLM_MODEL, **llm.warm_status(wake=False)},
         "ai_detector": ai_detect.backend(),
         "langs": list(LANGS),
         "interests": INTERESTS,

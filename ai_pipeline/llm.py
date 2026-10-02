@@ -6,12 +6,14 @@
 """
 import json
 import logging
+import threading
+import time
 from typing import TypeVar
 
 import requests
 from pydantic import BaseModel, ValidationError
 
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_TIMEOUT
+from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_SCALEDOWN_SEC, LLM_TIMEOUT, LLM_WAKE_TIMEOUT
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
@@ -26,15 +28,24 @@ class LLMInvalidOutput(LLMUnavailable):
 
 
 def _post(payload: dict) -> requests.Response:
-    try:
-        return requests.post(
-            f"{LLM_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {LLM_API_KEY}"},
-            json=payload,
-            timeout=LLM_TIMEOUT,
-        )
-    except requests.RequestException as e:
-        raise LLMUnavailable(str(e)) from e
+    for attempt in range(2):
+        try:
+            resp = requests.post(
+                f"{LLM_BASE_URL}/chat/completions",
+                headers={"Authorization": f"Bearer {LLM_API_KEY}"},
+                json=payload,
+                timeout=LLM_TIMEOUT,
+            )
+        except requests.RequestException as e:
+            raise LLMUnavailable(str(e)) from e
+        # Modal은 GPU 컨테이너가 켜지는 동안 503을 돌려준다 → 준비될 때까지 기다렸다 한 번 더
+        if resp.status_code == 503 and not is_local() and attempt == 0:
+            log.info("원격 GPU 준비 중(503) → 켜질 때까지 대기")
+            if not _wait_until_warm():
+                break
+            continue
+        return resp
+    raise LLMUnavailable("원격 GPU가 준비되지 않음")
 
 
 def chat_json(system: str, user: str, schema: type[T], max_tokens: int = 600) -> T:
@@ -57,6 +68,7 @@ def chat_json(system: str, user: str, schema: type[T], max_tokens: int = 600) ->
     if resp.status_code >= 400:
         raise LLMUnavailable(f"{resp.status_code} {resp.text[:200]}")
 
+    _mark_ok()  # 방금 응답했으니 원격 GPU는 켜져 있다
     content = resp.json()["choices"][0]["message"]["content"]
     try:
         return schema.model_validate_json(content)
@@ -81,12 +93,64 @@ def is_online() -> bool:
         return False
 
 
-def wake() -> None:
-    """원격 GPU 서버를 미리 깨운다 (앱 서버 시작 시 백그라운드에서 호출)."""
+# ── 원격 GPU(Modal) 콜드 스타트 상태 ─────────────────────────────────────
+# Modal은 요청이 없으면 LLM_SCALEDOWN_SEC 뒤에 꺼진다(요금 0). 사이트에 사람이 들어왔을 때만 깨우고,
+# 켜지는 동안의 상태를 화면에 보여준다. 마지막 성공 호출 시각으로 아직 켜져 있을지 추정한다.
+_warm = {"state": "cold", "started": 0.0, "last_ok": 0.0}
+_warm_lock = threading.Lock()
+
+
+def _mark_ok() -> None:
+    _warm.update(state="ready", last_ok=time.time())
+
+
+def _health_url() -> str:
+    base = LLM_BASE_URL[:-3] if LLM_BASE_URL.endswith("/v1") else LLM_BASE_URL
+    return f"{base}/health"
+
+
+def _wake() -> None:
+    """GPU 컨테이너가 뜰 때까지 /health 를 몇 초마다 확인한다 (켜지는 동안은 503).
+    준비되면 확인을 멈춘다 — 계속 두드리면 Modal이 꺼지지 않아 요금이 나간다."""
+    deadline = _warm["started"] + LLM_WAKE_TIMEOUT
+    while time.time() < deadline:
+        try:
+            if requests.get(_health_url(), timeout=30).status_code == 200:
+                _mark_ok()
+                log.info("원격 LLM 준비 완료 (%.0f초)", time.time() - _warm["started"])
+                return
+        except requests.RequestException:
+            pass
+        time.sleep(4)
+    _warm["state"] = "offline"
+    log.warning("원격 LLM이 %.0f초 안에 켜지지 않음", LLM_WAKE_TIMEOUT)
+
+
+def _wait_until_warm() -> bool:
+    with _warm_lock:
+        if _warm["state"] == "ready":  # 켜져 있다고 추정했는데 503 → 그새 꺼졌다
+            _warm["state"] = "cold"
+    warm_status(wake=True)
+    deadline = time.time() + LLM_WAKE_TIMEOUT
+    while time.time() < deadline:
+        if _warm["state"] == "ready":
+            return True
+        if _warm["state"] == "offline":
+            return False
+        time.sleep(2)
+    return False
+
+
+def warm_status(wake: bool = True) -> dict:
+    """{'remote', 'state': ready|starting|cold|offline, 'elapsed'} — wake=True면 꺼져 있을 때 켠다."""
     if is_local():
-        return
-    try:
-        r = requests.get(f"{LLM_BASE_URL}/models", headers={"Authorization": f"Bearer {LLM_API_KEY}"}, timeout=600)
-        log.info("원격 LLM 준비 완료 (%s)", r.status_code)
-    except requests.RequestException as e:
-        log.warning("원격 LLM 깨우기 실패: %s", e)
+        return {"remote": False, "state": "ready", "elapsed": 0}
+    with _warm_lock:
+        now = time.time()
+        if _warm["state"] == "ready" and now - _warm["last_ok"] > LLM_SCALEDOWN_SEC - 10:
+            _warm["state"] = "cold"  # 그동안 아무도 안 써서 Modal이 꺼졌을 것
+        if wake and _warm["state"] in ("cold", "offline"):
+            _warm.update(state="starting", started=now)
+            threading.Thread(target=_wake, daemon=True).start()
+        elapsed = int(now - _warm["started"]) if _warm["state"] == "starting" else 0
+        return {"remote": True, "state": _warm["state"], "elapsed": elapsed, "scaledown": LLM_SCALEDOWN_SEC}

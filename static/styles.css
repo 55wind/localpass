@@ -326,6 +326,24 @@ a { color: inherit; }
 .hidden-note button { background: none; border: 0; text-decoration: underline; font-weight: 700; padding: 0; }
 .muted { color: var(--ink-3); }
 
+/* ── 원격 GPU 콜드 스타트 안내 ──────────────── */
+.warm {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+  display: flex; gap: 14px; align-items: center; width: max-content; max-width: min(560px, calc(100% - 32px));
+  background: var(--ink); color: #fff; border-radius: var(--r-md); padding: 14px 20px 14px 16px;
+  box-shadow: 0 12px 32px rgba(30, 34, 51, .28);
+}
+.warm strong { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
+.warm p { margin: 2px 0 0; font-size: 13px; color: #c9ccd8; line-height: 1.5; }
+.warm__icon {
+  flex: none; width: 22px; height: 22px; border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .25); border-top-color: #fff; animation: spin .9s linear infinite;
+}
+.warm.is-ready .warm__icon { animation: none; border-color: #4fb38f; background: #4fb38f; }
+.warm.is-offline .warm__icon { animation: none; border-color: var(--seal); background: var(--seal); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .warm__icon { animation-duration: 3s; } }
+
 /* ── 푸터 ─────────────────────────────────── */
 .foot { background: var(--sky); padding: 48px 0 56px; font-size: 14px; color: var(--ink-2); }
 .foot__inner { display: flex; gap: 48px; align-items: flex-start; }

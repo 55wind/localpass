@@ -262,6 +262,7 @@
         tr, info, about, reviews),
     );
     openDrawer();
+    ensureWarm();
     loadDetail(p, info, about, tr);
     loadReviews(p, reviews);
   }
@@ -421,6 +422,52 @@
       ));
   }
 
+  // ── 원격 GPU(Modal) 콜드 스타트 안내 ─────────────────
+  // 사이트에 들어오거나 분석을 시작할 때만 GPU를 깨운다. 켜지는 동안 경과 시간을 보여주고,
+  // 준비되면 확인을 멈춘다 (계속 두드리면 GPU가 꺼지지 않아 요금이 나간다).
+  const warm = { timer: null, start: 0, state: "ready" };
+
+  function fmtClock(sec) {
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  }
+
+  function showWarm(kind) {
+    const el = $("#warm");
+    const sec = Math.max(0, Math.round((Date.now() - warm.start) / 1000));
+    el.hidden = false;
+    el.className = `warm is-${kind}`;
+    $("#warm-title").textContent = kind === "starting" ? t("warm.starting", { t: fmtClock(sec) }) : t(`warm.${kind}`);
+    $("#warm-sub").textContent = kind === "starting" ? t("warm.startingSub") : kind === "offline" ? t("warm.offlineSub") : "";
+  }
+
+  function hideWarmLater(ms) {
+    setTimeout(() => { if (!warm.timer) $("#warm").hidden = true; }, ms);
+  }
+
+  async function ensureWarm() {
+    if (warm.timer) return;  // 이미 켜는 중
+    let st;
+    try { st = await api("/api/llm/warm"); } catch (_) { return; }
+    if (!st.remote || st.state === "ready") return;
+    warm.start = Date.now() - (st.elapsed || 0) * 1000;
+    warm.state = st.state;
+    showWarm("starting");
+    let tick = 0;
+    warm.timer = setInterval(async () => {
+      tick += 1;
+      if (warm.state === "starting") showWarm("starting");
+      if (tick % 3) return;  // 상태 확인은 3초마다 (앱 서버에만 묻는다)
+      try { st = await api("/api/llm/warm"); } catch (_) { return; }
+      warm.state = st.state;
+      if (st.state === "ready" || st.state === "offline") {
+        clearInterval(warm.timer);
+        warm.timer = null;
+        showWarm(st.state);
+        hideWarmLater(st.state === "ready" ? 3000 : 9000);
+      }
+    }, 1000);
+  }
+
   // ── 직접 검사 ─────────────────────────────────────────
   const SAMPLES = {
     real: { title: "망원시장 칼국수 줄 서서 먹은 후기", text: "토요일 12시 반에 갔는데 20분 정도 기다렸어요. 칼국수 4천원에 양 많고 김치는 셀프. 자리가 좁아서 혼자 가면 합석할 수도 있어요. 카드 되긴 하는데 현금 내면 사장님이 좋아하심ㅎㅎ" },
@@ -439,6 +486,7 @@
       const btn = $("#check-btn");
       const out = $("#check-result");
       btn.disabled = true; btn.textContent = t("check.running");
+      ensureWarm();
       try {
         const r = await api("/api/analyze", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -460,6 +508,7 @@
       state.lang = b.dataset.lang;
       try { localStorage.setItem("lp.lang", state.lang); } catch (_) { /* 무시 */ }
       applyI18n();
+      if (!$("#warm").hidden) showWarm(warm.timer ? "starting" : warm.state);
       if (state.openPlace) closeDrawer();
       loadPlaces();
     }));
@@ -487,6 +536,7 @@
       state.status = { tour_api: "sample", naver: "sample", llm: { online: false }, interests: [] };
     }
     applyI18n();
+    ensureWarm();
     loadPlaces();
   }
 

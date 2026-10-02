@@ -116,6 +116,33 @@ def test_local_detector_probability_is_monotonic(monkeypatch):
     assert abs(mid - 0.5) < 1e-6
 
 
+# ── 원격 GPU 콜드 스타트 상태 ───────────────────────────
+
+def test_remote_warm_state(monkeypatch):
+    from ai_pipeline import llm
+    monkeypatch.setattr(llm, "LLM_BASE_URL", "https://example.modal.direct/v1")
+    monkeypatch.setattr(llm, "_warm", {"state": "cold", "started": 0.0, "last_ok": 0.0})
+    started = []
+    monkeypatch.setattr(llm, "_wake", lambda: started.append(1))
+    now = [1000.0]
+    monkeypatch.setattr(llm.time, "time", lambda: now[0])
+
+    assert llm.warm_status(wake=False)["state"] == "cold"          # 상태만 볼 때는 깨우지 않는다
+    assert llm.warm_status(wake=True)["state"] == "starting"       # 사이트 접속 → 켜기 시작
+    llm.warm_status(wake=True)
+    assert len(started) == 1                                        # 켜는 중에는 중복으로 깨우지 않는다
+    llm._mark_ok()
+    assert llm.warm_status()["state"] == "ready"
+    now[0] += llm.LLM_SCALEDOWN_SEC + 1                             # 아무도 안 쓰면 Modal이 꺼졌다고 본다
+    assert llm.warm_status(wake=False)["state"] == "cold"
+
+
+def test_local_llm_is_always_ready(monkeypatch):
+    from ai_pipeline import llm
+    monkeypatch.setattr(llm, "LLM_BASE_URL", "http://127.0.0.1:11434/v1")
+    assert llm.warm_status() == {"remote": False, "state": "ready", "elapsed": 0}
+
+
 # ── TourAPI 공식 번역 매칭 ──────────────────────────────
 
 def test_official_translation_matching():
