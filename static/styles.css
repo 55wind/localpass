@@ -143,13 +143,17 @@ a { color: inherit; }
 .regions { display: flex; gap: 10px; height: 300px; }
 .region {
   position: relative; overflow: hidden; border: 0; text-align: left; border-radius: var(--r-lg);
-  flex: 0 0 132px; padding: 28px; background: var(--c, var(--mist)); color: var(--ink);
+  flex: 0 0 92px; padding: 28px; background: var(--c, var(--mist)); color: var(--ink);
   transition: flex-basis .5s cubic-bezier(.3,.7,.2,1);
 }
 .region[aria-selected="true"] { flex: 1 1 auto; }
 .region--seongsu { --c: var(--seal-soft); }
 .region--jeonju { --c: var(--sage); }
-.region--anywhere { --c: var(--sky); }
+.region--busan { --c: var(--sky); }
+.region--gangneung { --c: var(--peach); }
+.region--gyeongju { --c: #efe6d6; }
+.region--jeju { --c: #e6f0e8; }
+.region--anywhere { --c: var(--mist); box-shadow: inset 0 0 0 1.5px var(--line); }
 .region__mark {
   position: absolute; right: -8px; bottom: -28px; font-size: clamp(90px, 11vw, 150px); font-weight: 800;
   letter-spacing: -0.06em; color: rgba(30, 34, 51, .07); white-space: nowrap; pointer-events: none; line-height: 1;
@@ -188,6 +192,14 @@ a { color: inherit; }
 }
 .chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
 .chip:hover { border-color: var(--ink); }
+.sort { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.sort select {
+  font: inherit; font-weight: 600; color: var(--ink); background: var(--paper);
+  border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 30px 6px 14px; cursor: pointer;
+  appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231e2233' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.sort select:hover, .sort select:focus { border-color: var(--ink); }
 .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
 .switch input { width: 18px; height: 18px; accent-color: var(--seal); }
 
@@ -224,6 +236,7 @@ a { color: inherit; }
 .card > button:hover .card__title { text-decoration: underline; text-underline-offset: 3px; }
 .card__ko { margin: 0; font-size: 14px; color: var(--ink-3); }
 .card__addr { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+.card__dist { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
 .card__trust { margin: 10px 0 0; display: flex; gap: 12px; font-size: 13px; font-weight: 600; color: var(--ink-3); flex-wrap: wrap; }
 .dot { display: inline-flex; align-items: center; gap: 5px; }
 .dot::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: currentColor; }
@@ -321,6 +334,15 @@ a { color: inherit; }
 .d__sec h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 4px; }
 .d__src { margin: 0 0 8px; font-size: 13px; color: var(--ink-3); }
 .d__summary { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; font-weight: 700; margin: 8px 0 4px; }
+/* 후기 검사 진행 표시 — 스피너 + n/6건 + 경과 시간, 남은 후기 자리 표시 */
+.rv-live { display: flex; gap: 12px; align-items: flex-start; background: var(--mist); border-radius: var(--r-sm); padding: 12px 14px; margin: 10px 0 4px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rv-live__spin { flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; border: 2.5px solid var(--line); border-top-color: var(--seal); animation: spin .9s linear infinite; }
+.rv-live__note { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+.rv-live.is-done .rv-live__spin { animation: none; border-color: var(--pine); background: var(--pine); }
+.rv-skel { display: grid; grid-template-columns: 58px 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--line); }
+.rv-skel__seal { width: 52px; height: 52px; border-radius: 12px; background: var(--mist); }
+.rv-skel i { display: block; height: 12px; border-radius: 6px; margin: 4px 0 12px; background: linear-gradient(90deg, var(--mist), #e9eaef, var(--mist)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .rv-live__spin { animation-duration: 3s; } .rv-skel i { animation: none; } }
 .progress { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 10px 0; }
 .progress i { display: block; height: 100%; width: 0; background: var(--seal); transition: width .3s ease; }
 .hidden-note { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--seal-soft); border-radius: var(--r-sm); padding: 12px 16px; font-size: 14px; font-weight: 600; margin-top: 8px; }

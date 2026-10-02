@@ -75,6 +75,43 @@ REGIONS = {
         "search_hint": "전주",
         "hint_i18n": {"en": "Jeonju", "ja": "全州", "zh": "全州"},
     },
+    # 지방 확장 — 원도심·전통시장 중심. 법정동 코드는 TourAPI ldongCode2 로 확인
+    "busan": {
+        "name": {"ko": "부산 남포동·자갈치", "en": "Busan Nampo-dong", "ja": "釜山・南浦洞", "zh": "釜山南浦洞"},
+        "short": {"ko": "부산", "en": "Busan", "ja": "釜山", "zh": "釜山"},
+        "city": {"ko": "부산 중구", "en": "Jung-gu, Busan", "ja": "釜山・中区", "zh": "釜山中区"},
+        "map_x": 129.0300, "map_y": 35.0990, "radius": 1500,
+        "ldong_regn": "26", "ldong_signgu": "110",
+        "search_hint": "부산",
+        "hint_i18n": {"en": "Busan", "ja": "釜山", "zh": "釜山"},
+    },
+    "gangneung": {
+        "name": {"ko": "강릉 중앙시장·원도심", "en": "Gangneung Old Town", "ja": "江陵・中央市場", "zh": "江陵中央市场"},
+        "short": {"ko": "강릉", "en": "Gangneung", "ja": "江陵", "zh": "江陵"},
+        "city": {"ko": "강원 강릉시", "en": "Gangneung, Gangwon", "ja": "江原・江陵市", "zh": "江原江陵市"},
+        "map_x": 128.8990, "map_y": 37.7560, "radius": 2000,
+        "ldong_regn": "51", "ldong_signgu": "150",
+        "search_hint": "강릉",
+        "hint_i18n": {"en": "Gangneung", "ja": "江陵", "zh": "江陵"},
+    },
+    "gyeongju": {
+        "name": {"ko": "경주 황리단길·대릉원", "en": "Gyeongju Hwangnidan-gil", "ja": "慶州・皇理団通り", "zh": "庆州皇理团路"},
+        "short": {"ko": "경주", "en": "Gyeongju", "ja": "慶州", "zh": "庆州"},
+        "city": {"ko": "경북 경주시", "en": "Gyeongju, Gyeongbuk", "ja": "慶尚北道・慶州市", "zh": "庆北庆州市"},
+        "map_x": 129.2160, "map_y": 35.8360, "radius": 1500,
+        "ldong_regn": "47", "ldong_signgu": "130",
+        "search_hint": "경주",
+        "hint_i18n": {"en": "Gyeongju", "ja": "慶州", "zh": "庆州"},
+    },
+    "jeju": {
+        "name": {"ko": "제주 동문시장·원도심", "en": "Jeju City Old Town", "ja": "済州・東門市場", "zh": "济州东门市场"},
+        "short": {"ko": "제주", "en": "Jeju", "ja": "済州", "zh": "济州"},
+        "city": {"ko": "제주 제주시", "en": "Jeju City, Jeju", "ja": "済州・済州市", "zh": "济州济州市"},
+        "map_x": 126.5250, "map_y": 33.5120, "radius": 1500,
+        "ldong_regn": "50", "ldong_signgu": "110",
+        "search_hint": "제주",
+        "hint_i18n": {"en": "Jeju", "ja": "済州", "zh": "济州"},
+    },
 }
 
 # 신뢰도 배지 기준 (개발 로직 설계 §5)

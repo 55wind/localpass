@@ -4,14 +4,13 @@
 
   const LANGS = ["en", "ja", "zh", "ko"];
   const CATS = ["all", "attraction", "culture", "festival", "shopping", "food"];
-  const REGION_KEYS = ["seongsu", "jeonju", "anywhere"];
-  const REGION_MARK = { seongsu: "성수", jeonju: "전주", anywhere: "전국" };
 
   const state = {
     lang: pickLang(),
     region: "seongsu",
     category: "all",
     tags: [],
+    sort: "recommend",
     showFlagged: false,
     places: [],
     search: null,         // 검색 결과 모드일 때 검색어
@@ -72,6 +71,7 @@
     renderSteps();
     renderCats();
     renderChips();
+    renderSort();
     renderRegions();
   }
 
@@ -95,7 +95,8 @@
   // ── 지역 패널 ─────────────────────────────────────────
   function renderRegions() {
     const wrap = $("#regions");
-    const items = REGION_KEYS.map((key) => {
+    const keys = [...state.regions.map((r) => r.key), "anywhere"];
+    const items = keys.map((key) => {
       const r = state.regions.find((x) => x.key === key);
       const selected = state.search === null ? state.region === key : key === "anywhere";
       const names = r ? (selected ? r.name : r.short) : null;  // 접힌 세로 패널에는 짧은 이름
@@ -106,7 +107,7 @@
         type: "button", role: "tab", class: `region region--${key}`, "aria-selected": String(selected),
         onclick: () => selectRegion(key),
       },
-        h("span", { class: "region__mark", "aria-hidden": "true", text: REGION_MARK[key] }),
+        h("span", { class: "region__mark", "aria-hidden": "true", text: r ? r.short.ko : "전국" }),
         h("p", { class: "region__name", text: name }),
         city ? h("p", { class: "region__city", text: city }) : null,
         h("p", { class: "region__desc", text: desc }),
@@ -179,9 +180,33 @@
   }
 
   function visiblePlaces() {
-    return state.places.filter((p) =>
+    const list = state.places.filter((p) =>
       (state.category === "all" || p.category === state.category) &&
       (!state.tags.length || state.tags.some((tg) => (p.tags || []).includes(tg))));
+    const dist = (p) => (p.dist === "" || p.dist == null ? Infinity : Number(p.dist));
+    const trust = (p) => p.trust || {};
+    const sorters = {
+      // 검증된 후기가 많고 평균 신뢰도가 높은 곳 먼저 → 사진 있는 곳 → 가까운 곳
+      recommend: (a, b) => (trust(b).trusted || 0) - (trust(a).trusted || 0)
+        || (trust(b).avg ?? -1) - (trust(a).avg ?? -1)
+        || (b.image ? 1 : 0) - (a.image ? 1 : 0) || dist(a) - dist(b),
+      distance: (a, b) => dist(a) - dist(b),
+      name: (a, b) => a.title.localeCompare(b.title, state.lang),
+    };
+    return [...list].sort(sorters[state.sort]);
+  }
+
+  function renderSort() {
+    const sel = $("#sort");
+    sel.replaceChildren(...["recommend", "distance", "name"].map((k) =>
+      h("option", { value: k, selected: state.sort === k }, t(`sort.${k}`))));
+    $("#sort-label").textContent = t("tool.sort");
+  }
+
+  function fmtDist(m) {
+    const n = Number(m);
+    if (!m || Number.isNaN(n)) return "";
+    return n >= 1000 ? `${(n / 1000).toFixed(1)}km` : `${Math.round(n / 10) * 10}m`;
   }
 
   function renderGrid() {
@@ -220,6 +245,7 @@
           h("h3", { class: "card__title", text: p.title }),
           p.title !== p.title_ko ? h("p", { class: "card__ko", lang: "ko", text: p.title_ko }) : null,
           h("p", { class: "card__addr", text: p.addr }),
+          fmtDist(p.dist) ? h("p", { class: "card__dist", text: t("card.dist", { d: fmtDist(p.dist) }) }) : null,
           h("p", { class: "card__trust" }, trustLine),
         )));
   }
@@ -301,14 +327,49 @@
     const status = h("p", { class: "d__src" });
     const bar = h("i");
     const progress = h("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100" }, bar);
+    // 진행 표시: 스피너 + "n/6건 완료 · 경과 시간" — 한 건에 몇 초씩 걸려서, 돌아가고 있다는 걸 보여준다
+    const liveText = h("span", { text: t("d.searching") });
+    const liveNote = h("span", { class: "rv-live__note", text: t("d.slowNote") });
+    const live = h("div", { class: "rv-live", role: "status", "aria-live": "polite" },
+      h("span", { class: "rv-live__spin", "aria-hidden": "true" }), h("div", {}, liveText, liveNote));
     const summary = h("div", { class: "d__summary" });
     const list = h("div", { class: "reviews", "aria-live": "polite" });
+    const skeletons = h("div", { class: "rv-skels", "aria-hidden": "true" });
     const hiddenNote = h("div", { class: "hidden-note", hidden: true });
-    sec.replaceChildren(h("h3", { text: t("d.reviews") }), status, progress, summary, list, hiddenNote);
+    sec.replaceChildren(h("h3", { text: t("d.reviews") }), status, live, progress, summary, list, skeletons, hiddenNote);
 
     const results = [];
     let expected = 0;
+    let finished = false;
     let showFlagged = state.showFlagged;
+    const started = Date.now();
+    const clock = () => fmtClock(Math.round((Date.now() - started) / 1000));
+    const tick = () => {
+      if (finished) return;
+      liveText.textContent = expected
+        ? t("d.progress", { done: results.length, n: expected, t: clock() })
+        : t("d.searching");
+    };
+    const ticker = setInterval(tick, 1000);
+    ctrl.signal.addEventListener("abort", () => clearInterval(ticker));
+    const finish = () => {
+      finished = true;
+      clearInterval(ticker);
+      skeletons.replaceChildren();
+      if (expected) {
+        live.classList.add("is-done");
+        liveText.textContent = t("d.done", { n: results.length, t: clock() });
+        liveNote.textContent = "";
+      } else {
+        live.hidden = true;
+      }
+    };
+    const drawSkeletons = () => {
+      const left = finished ? 0 : Math.max(0, expected - results.length);
+      skeletons.replaceChildren(...Array.from({ length: left }, () =>
+        h("div", { class: "rv-skel" }, h("span", { class: "rv-skel__seal" }),
+          h("div", {}, h("i", { style: "width:40%" }), h("i", { style: "width:85%" }), h("i", { style: "width:70%" })))));
+    };
 
     const redraw = () => {
       const sorted = [...results].sort((a, b) => b.trust_score - a.trust_score);
@@ -325,6 +386,8 @@
         h("span", { text: hiddenCount ? t("d.flaggedHidden", { n: hiddenCount }) : "" }),
         h("button", { type: "button", onclick: () => { showFlagged = !showFlagged; redraw(); } },
           hiddenCount ? t("d.show") : t("d.hide")));
+      drawSkeletons();
+      tick();
     };
 
     const q = new URLSearchParams({ place_id: p.id, title_ko: p.title_ko, title: p.title, region: state.search === null ? state.region : "", lang: state.lang });
@@ -347,9 +410,11 @@
             status.textContent = ev.source === "live" ? t("d.srcLive", { q: ev.query }) : t("d.srcSample");
             if (!expected) {
               progress.hidden = true;
+              finish();
               list.replaceChildren(h("p", { class: "muted", text: t("d.noReviews") }));
             } else {
-              summary.textContent = t("d.analyzing", { n: expected });
+              drawSkeletons();
+              tick();
             }
           } else if (ev.type === "review") {
             ev.review._new = true;
@@ -359,13 +424,14 @@
           } else if (ev.type === "summary") {
             progress.hidden = true;
             p.trust = ev.trust;
+            finish();
             if (results.length) redraw();
           }
         }
       }
       renderGrid();
     } catch (e) {
-      if (e.name !== "AbortError") status.textContent = t("list.loadFail");
+      if (e.name !== "AbortError") { finish(); status.textContent = t("list.loadFail"); }
     }
   }
 
@@ -522,6 +588,7 @@
     });
     $("#list-back").addEventListener("click", () => { state.search = null; loadPlaces(); });
     $("#show-flagged").addEventListener("change", (e) => { state.showFlagged = e.target.checked; });
+    $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; renderGrid(); });
     $("#drawer-close").addEventListener("click", closeDrawer);
     $("#scrim").addEventListener("click", closeDrawer);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });

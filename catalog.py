@@ -24,7 +24,10 @@ log = logging.getLogger(__name__)
 
 @lru_cache
 def _demo(region_key: str) -> dict:
-    return json.loads((DEMO_DIR / f"{region_key}.json").read_text(encoding="utf-8"))
+    path = DEMO_DIR / f"{region_key}.json"
+    if not path.exists():  # 샘플은 성수·전주만 — 나머지 지역은 실데이터(TourAPI 키)로만 동작
+        return {"places": [], "reviews": {}}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _demo_place(item: dict, lang: str) -> dict:
