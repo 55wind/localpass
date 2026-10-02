@@ -24,6 +24,7 @@
 :lang(zh) { --font: "SUIT Variable", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* display:flex 같은 클래스 스타일이 hidden 속성을 덮어쓰지 않도록 */
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 80px; }
 body {
   margin: 0;
