@@ -46,6 +46,7 @@ class TrustResult(BaseModel):
     security_matches: list[str] = []
 
     is_sponsored: bool = False
+    sponsor_disclosed: bool = False   # 글에서 협찬 사실을 밝힘 → '협찬 고지' (숨기지 않음)
     sponsor_source: Literal["rule", "llm", "none"] = "none"
     sponsor_reason: str = ""
     sponsor_markers: list[str] = []
@@ -58,5 +59,5 @@ class TrustResult(BaseModel):
 
     analysis_failed: bool = False    # LLM 분석이 실패해 판단 근거가 부족함
     trust_score: float = 0.0
-    badge: Literal["trusted", "caution", "flagged", "blocked"] = "caution"
+    badge: Literal["trusted", "caution", "sponsored", "flagged", "blocked"] = "caution"
     llm_used: bool = False

@@ -75,14 +75,31 @@ def test_sponsor_self_paid_is_not_sponsored():
 
 # ── 점수·배지 ────────────────────────────────────────────
 
+def _badge(score, disclosed=False, hidden_ad=False, security="normal"):
+    return badge_for(score, disclosed=disclosed, hidden_ad=hidden_ad, security=security)
+
+
 def test_trust_score_and_badges():
-    clean = compute_trust(sponsored_rule=False, llm_sponsor_conf=0, ai_prob=0.1, ai_source="qwen", security="normal")
-    assert badge_for(clean, False, "normal") == "trusted"
-    ad = compute_trust(sponsored_rule=True, llm_sponsor_conf=0, ai_prob=0.85, ai_source="qwen", security="normal")
-    assert badge_for(ad, True, "normal") == "flagged"
-    aiish = compute_trust(sponsored_rule=False, llm_sponsor_conf=0, ai_prob=0.85, ai_source="qwen", security="normal")
-    assert badge_for(aiish, False, "normal") == "caution"
-    assert badge_for(0.9, False, "block") == "blocked"
+    clean = compute_trust(disclosed=False, llm_sponsor_conf=0, ai_prob=0.1, ai_source="qwen", security="normal")
+    assert _badge(clean) == "trusted"
+    aiish = compute_trust(disclosed=False, llm_sponsor_conf=0, ai_prob=0.85, ai_source="qwen", security="normal")
+    assert _badge(aiish) == "caution"
+    assert _badge(0.9, security="block") == "blocked"
+
+
+def test_disclosed_sponsorship_is_labeled_not_flagged():
+    # 협찬을 밝힌 사람 글 → '협찬 고지' (숨기지 않음)
+    honest = compute_trust(disclosed=True, llm_sponsor_conf=0, ai_prob=0.1, ai_source="local", security="normal")
+    assert _badge(honest, disclosed=True) == "sponsored"
+    # 협찬을 밝혔어도 AI가 쓴 것 같으면 '의심'
+    ai_ad = compute_trust(disclosed=True, llm_sponsor_conf=0, ai_prob=0.85, ai_source="qwen", security="normal")
+    assert _badge(ai_ad, disclosed=True) == "flagged"
+
+
+def test_hidden_ad_is_flagged():
+    # 표기 없이 홍보하는 글(숨은 광고) → '의심'
+    hidden = compute_trust(disclosed=False, llm_sponsor_conf=0.7, ai_prob=0.1, ai_source="local", security="normal")
+    assert _badge(hidden, hidden_ad=True) == "flagged"
 
 
 def test_analyze_post_without_llm_blocks_injection_and_masks_pii():
@@ -98,10 +115,10 @@ def test_analyze_post_without_llm_is_never_trusted():
     assert r.analysis_failed and r.badge == "caution"
 
 
-def test_analyze_post_without_llm_flags_disclosure():
+def test_analyze_post_without_llm_labels_disclosure():
     post = {"title": "[체험단] 카페", "description": "업체로부터 음료를 제공받아 작성했어요. 분위기 최고!"}
     r = analyze_post(post, "en", use_llm=False)
-    assert r.is_sponsored and r.sponsor_source == "rule" and r.badge == "flagged"
+    assert r.sponsor_disclosed and r.sponsor_source == "rule" and r.badge == "sponsored"
 
 
 # ── 로컬 AI 판별기 확률 변환 ────────────────────────────

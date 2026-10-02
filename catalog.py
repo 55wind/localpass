@@ -55,7 +55,7 @@ def _find_demo_item(place_id: str) -> tuple[str, dict] | tuple[None, None]:
 def _decorate(places: list[dict]) -> list[dict]:
     for p in places:
         p["tags"] = personalize.derive_tags(p)
-        p["trust"] = cache.get("place_trust", p["id"])
+        p["trust"] = cache.get("place_trust_v2", p["id"])
     return places
 
 
@@ -209,7 +209,7 @@ def review_stream(place_id: str, title_ko: str, region_key: str, lang: str, titl
 
     summary = merge.summarize_trust(results)
     if results:
-        cache.put("place_trust", place_id, summary)
+        cache.put("place_trust_v2", place_id, summary)
     yield {"type": "summary", "trust": summary}
 
 

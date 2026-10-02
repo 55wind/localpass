@@ -234,6 +234,7 @@
     const trustLine = trust && trust.total
       ? [h("span", { text: t("card.checked", { n: trust.total }) }),
          trust.trusted ? h("span", { class: "dot dot--trusted", text: t("card.trusted", { n: trust.trusted }) }) : null,
+         trust.sponsored ? h("span", { class: "dot dot--sponsored", text: t("card.sponsored", { n: trust.sponsored }) }) : null,
          (trust.flagged + trust.blocked) ? h("span", { class: "dot dot--flagged", text: t("card.flagged", { n: trust.flagged + trust.blocked }) }) : null]
       : [h("span", { text: t("card.notChecked") })];
     const flag = p.sample ? t("card.sample") : p.machine_translated ? t("card.machine") : null;
@@ -380,11 +381,12 @@
 
     const redraw = () => {
       const sorted = [...results].sort((a, b) => b.trust_score - a.trust_score);
-      const visible = showFlagged ? sorted : sorted.filter((r) => r.badge === "trusted" || r.badge === "caution");
+      // 협찬 고지 글은 숨기지 않는다 — 협찬은 잘못이 아니라 알려 줄 정보
+      const visible = showFlagged ? sorted : sorted.filter((r) => r.badge !== "flagged" && r.badge !== "blocked");
       const hiddenCount = sorted.length - visible.length;
       list.replaceChildren(...visible.map((r) => reviewCard(r, r._new)));
       results.forEach((r) => { r._new = false; });
-      summary.replaceChildren(...["trusted", "caution", "flagged", "blocked"]
+      summary.replaceChildren(...["trusted", "caution", "sponsored", "flagged", "blocked"]
         .map((b) => [b, results.filter((r) => r.badge === b).length])
         .filter(([, n]) => n)
         .map(([b, n]) => h("span", { class: `rv__badge review--${b}` }, `${t("b." + b)} ${n}`)));
@@ -447,7 +449,8 @@
     if (r.badge === "blocked") {
       signals.push(["bad", t("sig.secBlock")]);
     } else {
-      if (r.sponsor_source === "rule") signals.push(["bad", t("sig.sponsorRule", { m: r.sponsor_markers.slice(0, 3).join(", ") })]);
+      if (r.sponsor_disclosed && r.sponsor_source === "rule") signals.push(["note", t("sig.sponsorRule", { m: r.sponsor_markers.slice(0, 3).join(", ") })]);
+      else if (r.sponsor_disclosed) signals.push(["note", `${t("sig.sponsorDisclosed")}${r.sponsor_reason ? ": " + r.sponsor_reason : ""}`]);
       else if (r.sponsor_source === "llm") signals.push(["bad", `${t("sig.sponsorLlm")}${r.sponsor_reason ? ": " + r.sponsor_reason : ""}`]);
       else signals.push(["ok", t("sig.sponsorNone")]);
       if (r.self_paid_claim) signals.push(["info", t("sig.selfPaid")]);

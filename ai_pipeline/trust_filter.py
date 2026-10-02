@@ -93,13 +93,16 @@ def trim_summary(text: str, max_sentences: int = 3, max_chars: int = 360) -> str
 
 
 AI_WEIGHT = {"gptzero": 0.5, "local": 0.5, "qwen": 0.4}  # 전용 판별기가 포함되면 더 크게
+# 협찬을 밝힌 글은 정상적인 마케팅(소상공인의 저예산 홍보)이라 '의심'이 아니라 '협찬 고지'로 알린다.
+# 독립적인 경험담보다는 덜 중립적이므로 점수만 조금 낮춘다. 표기 없이 홍보하는 글(숨은 광고)은 그대로 감점.
+DISCLOSED_PENALTY = 0.3
 
 
-def compute_trust(*, sponsored_rule: bool, llm_sponsor_conf: float, ai_prob: float | None,
+def compute_trust(*, disclosed: bool, llm_sponsor_conf: float, ai_prob: float | None,
                   ai_source: str, security: str) -> float:
     score = 1.0
-    if sponsored_rule:
-        score -= 0.5
+    if disclosed:
+        score -= DISCLOSED_PENALTY
     else:
         score -= 0.5 * llm_sponsor_conf
     if ai_prob is not None:
@@ -110,11 +113,14 @@ def compute_trust(*, sponsored_rule: bool, llm_sponsor_conf: float, ai_prob: flo
     return round(max(0.0, min(1.0, score)), 2)
 
 
-def badge_for(score: float, is_sponsored: bool, security: str) -> str:
+def badge_for(score: float, *, disclosed: bool, hidden_ad: bool, security: str) -> str:
+    """차단 > 의심(숨은 광고·AI 작성·점수 낮음) > 협찬 고지 > 신뢰/참고"""
     if security == "block":
         return "blocked"
-    if is_sponsored or score < TRUST_LOW:
+    if hidden_ad or score < TRUST_LOW:
         return "flagged"
+    if disclosed:
+        return "sponsored"
     return "trusted" if score >= TRUST_HIGH else "caution"
 
 
@@ -210,8 +216,8 @@ def analyze_post(post: dict, lang: str = "en", use_llm: bool = True,
     result.self_paid_claim = markers["self_paid"]
     sponsored_rule = bool(markers["explicit"])
     if sponsored_rule:
-        result.is_sponsored, result.sponsor_source = True, "rule"
-        result.sponsor_reason = f"공정위 협찬 표기 발견: {', '.join(markers['explicit'][:3])}"
+        result.is_sponsored, result.sponsor_disclosed, result.sponsor_source = True, True, "rule"
+        result.sponsor_reason = f"공정위 협찬 표기: {', '.join(markers['explicit'][:3])}"
 
     wrapped = _wrap(title, text)
     llm_conf = 0.0
@@ -240,7 +246,9 @@ def analyze_post(post: dict, lang: str = "en", use_llm: bool = True,
             ai_style = AI_STYLE_SCORE[analysis.ai_style]
             if not sponsored_rule:
                 result.sponsor_reason = analysis.sponsor_reason
-                if llm_conf >= 0.6:
+                if analysis.sponsor_level == "explicit":    # 규칙에 없는 표현으로 협찬을 밝힘
+                    result.is_sponsored, result.sponsor_disclosed, result.sponsor_source = True, True, "llm"
+                elif llm_conf >= 0.6:                       # 표기 없이 홍보 — 숨은 광고 의심
                     result.is_sponsored, result.sponsor_source = True, "llm"
     result.analysis_failed = analysis is None  # 모델이 꺼져 있었거나 분석에 실패
 
@@ -257,11 +265,12 @@ def analyze_post(post: dict, lang: str = "en", use_llm: bool = True,
 
     # ⑦ 종합
     result.trust_score = compute_trust(
-        sponsored_rule=sponsored_rule, llm_sponsor_conf=llm_conf,
+        disclosed=result.sponsor_disclosed, llm_sponsor_conf=llm_conf,
         ai_prob=result.ai_probability, ai_source=result.ai_source, security=result.security,
     )
     if result.analysis_failed:
         # 문맥 분석 없이 '신뢰'를 줄 수는 없다 — 근거가 부족하면 최대 '참고'
         result.trust_score = min(result.trust_score, 0.6)
-    result.badge = badge_for(result.trust_score, result.is_sponsored, result.security)
+    result.badge = badge_for(result.trust_score, disclosed=result.sponsor_disclosed,
+                             hidden_ad=result.is_sponsored and not result.sponsor_disclosed, security=result.security)
     return result

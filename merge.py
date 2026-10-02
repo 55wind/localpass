@@ -63,7 +63,7 @@ def pick_posts(place_title: str, *result_lists: list[dict], limit: int, hint: st
 
 def summarize_trust(results: list[dict]) -> dict:
     counted = [r for r in results if r["badge"] != "blocked"]
-    summary = {b: sum(1 for r in results if r["badge"] == b) for b in ("trusted", "caution", "flagged", "blocked")}
+    summary = {b: sum(1 for r in results if r["badge"] == b) for b in ("trusted", "caution", "sponsored", "flagged", "blocked")}
     summary["total"] = len(results)
     summary["avg"] = round(sum(r["trust_score"] for r in counted) / len(counted), 2) if counted else None
     return summary
