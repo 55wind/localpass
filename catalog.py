@@ -163,7 +163,7 @@ def _collect_posts(place_id: str, title_ko: str, region_key: str) -> tuple[list[
             # API HUB의 관련도순은 오래된 외부 블로그가 섞여, 최신순과 합쳐서 관련 글만 고른다
             recent = naver_blog.search_blog_posts(query, display=50, sort="date")
             similar = naver_blog.search_blog_posts(query, display=30, sort="sim")
-            return merge.pick_posts(title_ko, recent, similar, limit=REVIEWS_PER_PLACE), "live", query
+            return merge.pick_posts(title_ko, recent, similar, limit=REVIEWS_PER_PLACE, hint=hint), "live", query
         except naver_blog.NaverApiError as e:
             log.error("네이버 API 오류 → 샘플로 대체: %s", e)
     key, _ = _find_demo_item(place_id)

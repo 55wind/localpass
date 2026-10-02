@@ -192,6 +192,10 @@ def test_relevant_posts_and_query():
              {"title": "어니언성수 빵", "description": ""}]
     assert len(merge.relevant_posts("어니언 성수", posts)) == 2
     assert merge.relevant_posts("서울숲", [{"title": "게임 공략", "description": "성수"}]) == []
+    vietnam = {"title": "금리 인상은 베트남 자산 전반에", "description": "호치민 남부 시장의 부동산"}
+    nambu = {"title": "전주남부시장 야시장 후기", "description": ""}
+    passing = {"title": "가을 여행지 7곳", "description": "전주 남부시장 야시장도 좋아요"}
+    assert merge.relevant_posts("남부시장", [vietnam, nambu, passing], hint="전주") == [nambu, passing]
     picked = merge.pick_posts("어니언 성수",
                               [{"link": "a", "title": "어니언 성수", "postdate": "20260101"}],
                               [{"link": "a", "title": "어니언 성수", "postdate": "20260101"},

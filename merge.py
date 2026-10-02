@@ -16,16 +16,23 @@ def blog_query(place_title: str, search_hint: str = "") -> str:
     return title
 
 
-def relevant_posts(place_title: str, posts: list[dict]) -> list[dict]:
+def relevant_posts(place_title: str, posts: list[dict], hint: str = "") -> list[dict]:
     """장소명의 단어(2글자 이상)가 제목·요약에 모두 들어간 글만 남긴다.
 
     '어니언 성수' → '어니언'과 '성수'가 각각 있으면 인정 ('성수동 어니언', '어니언성수' 모두 통과).
+    제목엔 없고 본문에만 스치듯 나오는 글은 지역명(hint)도 함께 있어야 인정한다
+    — '남부시장'처럼 흔한 이름이 '베트남 남부 시장' 같은 엉뚱한 글에 걸리지 않도록.
     엉뚱한 글을 분석해 보여주느니 0건이 낫기 때문에, 맞는 글이 없으면 빈 목록을 돌려준다.
     """
     tokens = _tokens(place_title)
+    need_hint = _norm(hint) if hint and hint not in place_title else ""
+
     def ok(p: dict) -> bool:
-        body = _norm(clean_html(p.get("title", "")) + clean_html(p.get("description", "")))
-        return all(t in body for t in tokens)
+        title = _norm(clean_html(p.get("title", "")))
+        body = title + _norm(clean_html(p.get("description", "")))
+        if not all(t in body for t in tokens):
+            return False
+        return all(t in title for t in tokens) or not need_hint or need_hint in body
     return [p for p in posts if ok(p)]
 
 
@@ -34,7 +41,7 @@ def _tokens(place_title: str) -> list[str]:
     return [t for t in tokens if len(t) >= 2] or [_norm(place_title)]
 
 
-def pick_posts(place_title: str, *result_lists: list[dict], limit: int) -> list[dict]:
+def pick_posts(place_title: str, *result_lists: list[dict], limit: int, hint: str = "") -> list[dict]:
     """여러 검색 결과(최신순·관련도순)를 합쳐 중복을 빼고 관련 글만 limit개 고른다.
 
     제목에 장소명이 들어간 글(그 장소에 대한 후기)을 먼저, 본문에 스치듯 언급한 글은 나중에 — 같은 순위면 최신 글 우선.
@@ -51,7 +58,7 @@ def pick_posts(place_title: str, *result_lists: list[dict], limit: int) -> list[
         in_title = all(t in _norm(clean_html(p.get("title", ""))) for t in tokens)
         return (0 if in_title else 1, -int(p.get("postdate") or 0))
 
-    return sorted(relevant_posts(place_title, merged), key=rank)[:limit]
+    return sorted(relevant_posts(place_title, merged, hint), key=rank)[:limit]
 
 
 def summarize_trust(results: list[dict]) -> dict:
