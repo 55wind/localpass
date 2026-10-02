@@ -1,11 +1,11 @@
-// LocalPass 코딩설명서 (A4 2매) — docx-js
+// LocalPass 코드 설명서 (A4 2매 이내) — docx-js
 const fs = require("fs");
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, ShadingType,
   AlignmentType, BorderStyle, LevelFormat, VerticalAlign, Footer, PageNumber, TableLayoutType, LineRuleType,
 } = require("docx");
 
-const OUT = process.argv[2] || "LocalPass_코딩설명서.docx";
+const OUT = process.argv[2] || "LocalPass_코드설명서.docx";
 const FONT = "Noto Sans KR";
 const INK = "1E2233", SUB = "4A5068", RED = "C8283F", PINK = "FBE4E7", GRAY = "F3F3F6", LINE = "D5D7DE";
 const BLUE = "DCEBF5", GREEN = "E2EADB";
@@ -77,7 +77,7 @@ const children = [];
 // 머리
 children.push(new Paragraph({
   children: [TR({ text: "2026 지역혁신 인재양성 연합 페스티벌 · AI·DX 산출물", size: 17, color: SUB }),
-             TR({ text: "   코딩설명서", size: 17, bold: true, color: RED })],
+             TR({ text: "   코드 설명서", size: 17, bold: true, color: RED })],
   spacing: { after: 30 },
 }));
 children.push(new Paragraph({
@@ -88,7 +88,7 @@ children.push(new Paragraph({
 const L = (t) => ({ t, fill: GRAY, bold: true });
 children.push(table([1300, 3800, 1300, 3806], [
   [L("팀"), "류황규 · 박건우 · 홍승우 · 황지룡", L("지원 분야"), "AI·DX 산출물"],
-  [L("서비스 주소"), "https://localpass-kappa.vercel.app", L("제출물"), "소스 코드, 기능명세서(PPT·PDF), 코딩설명서"],
+  [L("서비스 주소"), "https://localpass-kappa.vercel.app", L("제출물"), "코드 설명서, 코드 결과(PPT 20장), 소스 코드"],
 ], { size: 17 }));
 
 // 1. 배경
@@ -201,7 +201,7 @@ children.push(B("외국인 관광객도 한국인처럼 로컬 후기를 신뢰�
 children.push(B("지역은 좌표만 추가하면 전국으로 확장(추가 크롤링 없음). 향후 블로그 후기 라벨 데이터로 판별기를 다시 보정하고, 후기 출처를 넓혀 판정 정확도를 높일 계획"));
 
 const doc = new Document({
-  creator: "LocalPass 팀", title: "LocalPass 코딩설명서",
+  creator: "LocalPass 팀", title: "LocalPass 코드 설명서",
   // 문서 기본 글꼴(docDefaults)에 Noto Sans KR을 넣으면 Word PDF에서 한글이 맑은 고딕으로 바뀐다 → 글꼴은 TR()에서만 지정
   styles: { default: { document: { run: { size: BODY, color: INK } } } },
   numbering: { config: [
@@ -211,7 +211,7 @@ const doc = new Document({
   sections: [{
     properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 720, bottom: 720, left: 850, right: 850, footer: 360 } } },
     footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
-      TR({ text: "LocalPass 코딩설명서  ", size: 15, color: SUB }),
+      TR({ text: "LocalPass 코드 설명서  ", size: 15, color: SUB }),
       TR({ children: [PageNumber.CURRENT], size: 15, color: SUB }), TR({ text: " / ", size: 15, color: SUB }),
       TR({ children: [PageNumber.TOTAL_PAGES], size: 15, color: SUB }),
     ] })] }) },
